@@ -10,6 +10,17 @@ namespace FolderTools.Services
     /// </summary>
     public class TextReplacer : ITextReplacer
     {
+        private readonly IFileHelper _fileHelper;
+
+        public TextReplacer() : this(new Utilities.FileHelperWrapper())
+        {
+        }
+
+        public TextReplacer(IFileHelper fileHelper)
+        {
+            _fileHelper = fileHelper ?? new Utilities.FileHelperWrapper();
+        }
+
         /// <summary>
         /// Performs find and replace operations on a file
         /// </summary>
@@ -21,7 +32,7 @@ namespace FolderTools.Services
             try
             {
                 // Read the file content
-                if (!FileHelper.TryReadFile(filePath, options.Encoding, out string content, out string error))
+                if (!_fileHelper.TryReadFile(filePath, options.Encoding, out string content, out string error))
                 {
                     if (options.Verbose)
                     {
@@ -76,7 +87,7 @@ namespace FolderTools.Services
                 // Write the modified content back (unless dry run)
                 if (!options.IsDryRun && replacementCount > 0)
                 {
-                    if (!FileHelper.TryWriteFile(filePath, content, options.Encoding, out string writeError))
+                    if (!_fileHelper.TryWriteFile(filePath, content, options.Encoding, out string writeError))
                     {
                         if (options.Verbose)
                         {

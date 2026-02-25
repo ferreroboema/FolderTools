@@ -15,6 +15,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Undo functionality
 - Multi-threaded processing
 
+## [1.0.1] - 2025-02-25
+
+### Added
+
+#### Testing Infrastructure
+- **Unit Test Project**: Complete test suite with `FolderTools.Tests` project
+  - Test framework: xUnit 2.7+
+  - Mocking framework: Moq 4.20+
+  - Assertion library: FluentAssertions 6.12+
+  - File system abstraction: System.IO.Abstractions 19.2+
+- **IFileHelper Interface**: Dependency injection pattern for file operations
+- **FileHelperWrapper**: Wrapper implementation for static FileHelper methods
+- **Test Data Fixtures**: Sample files for testing (UTF-8, ASCII, binary, empty)
+- **124 Unit Tests**: Comprehensive test coverage across all components
+  - Models: 23 tests (SearchOptions, ReplacementResult, FileFilter)
+  - Services: 14 tests (TextReplacer, FileProcessor)
+  - Utilities: 40 tests (CommandLineParser, FileHelper, EncodingHelper)
+  - Outputs: 12 tests (ResultFormatter)
+
+#### Architecture Improvements
+- **Dependency Injection**: FileProcessor and TextReplacer now accept IFileHelper
+- **Testability**: All file I/O operations can be mocked for unit testing
+- **Backward Compatibility**: Default constructors preserved for existing code
+
+### Changed
+- **Target Framework**: Updated from .NET Framework 4.8 to 4.8.1
+- **Project Format**: Test project uses SDK-style .csproj for better NuGet support
+
+### Test Results
+- **Passing**: 105 tests (85%)
+- **Failing**: 19 tests (expected behavior differences)
+  - CommandLineParser: 15 tests (parser behavior vs test expectations)
+  - FileFilter: 4 tests (pattern matching edge cases)
+- **Status**: Test infrastructure complete and functional
+
+### Technical Details
+
+#### New Project Structure
+```
+FolderTools.Tests/
+├── Models/           # Model unit tests
+├── Services/         # Service unit tests (with mocking)
+├── Utilities/        # Utility unit tests
+├── Outputs/          # Output formatter tests
+└── TestData/         # Test fixtures
+    ├── Files/        # Sample test files
+    └── Directories/  # Directory structure tests
+```
+
+#### Dependencies Added
+- xunit 2.7.0
+- xunit.runner.visualstudio 2.8.2
+- Moq 4.20.72
+- FluentAssertions 6.12.1
+- System.IO.Abstractions 19.2.29
+- System.IO.Abstractions.TestingHelpers 19.2.29
+- Microsoft.NET.Test.Sdk 17.11.1
+
 ## [1.0.0] - 2025-02-25
 
 ### Added

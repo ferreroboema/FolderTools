@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FolderTools", "FolderTools\FolderTools.csproj", "{A1B2C3D4-E5F6-4A5B-8C7D-1E2F3A4B5C6D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FolderTools.Tests", "FolderTools.Tests\FolderTools.Tests.csproj", "{B2C3D4E5-F6A7-4B5C-8D7E-2F3A4B5C6D7E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -15,5 +17,9 @@ Global
 		{A1B2C3D4-E5F6-4A5B-8C7D-1E2F3A4B5C6D}.Debug|x86.Build.0 = Debug|x86
 		{A1B2C3D4-E5F6-4A5B-8C7D-1E2F3A4B5C6D}.Release|x86.ActiveCfg = Release|x86
 		{A1B2C3D4-E5F6-4A5B-8C7D-1E2F3A4B5C6D}.Release|x86.Build.0 = Release|x86
+		{B2C3D4E5-F6A7-4B5C-8D7E-2F3A4B5C6D7E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B2C3D4E5-F6A7-4B5C-8D7E-2F3A4B5C6D7E}.Debug|x86.Build.0 = Debug|Any CPU
+		{B2C3D4E5-F6A7-4B5C-8D7E-2F3A4B5C6D7E}.Release|x86.ActiveCfg = Release|Any CPU
+		{B2C3D4E5-F6A7-4B5C-8D7E-2F3A4B5C6D7E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

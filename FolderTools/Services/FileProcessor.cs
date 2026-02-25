@@ -11,14 +11,20 @@ namespace FolderTools.Services
     public class FileProcessor : IFileProcessor
     {
         private readonly ITextReplacer _textReplacer;
+        private readonly IFileHelper _fileHelper;
 
-        public FileProcessor() : this(new TextReplacer())
+        public FileProcessor() : this(new TextReplacer(), new FileHelperWrapper())
         {
         }
 
-        public FileProcessor(ITextReplacer textReplacer)
+        public FileProcessor(ITextReplacer textReplacer) : this(textReplacer, new FileHelperWrapper())
+        {
+        }
+
+        public FileProcessor(ITextReplacer textReplacer, IFileHelper fileHelper)
         {
             _textReplacer = textReplacer ?? throw new ArgumentNullException(nameof(textReplacer));
+            _fileHelper = fileHelper ?? throw new ArgumentNullException(nameof(fileHelper));
         }
 
         /// <summary>
@@ -127,7 +133,7 @@ namespace FolderTools.Services
                 }
 
                 // Check if file is text file
-                if (!FileHelper.IsTextFile(filePath))
+                if (!_fileHelper.IsTextFile(filePath))
                 {
                     result.AddSkipped(filePath, "Binary file");
                     if (options.Verbose)
@@ -138,7 +144,7 @@ namespace FolderTools.Services
                 }
 
                 // Check if file is locked
-                if (FileHelper.IsFileLocked(filePath))
+                if (_fileHelper.IsFileLocked(filePath))
                 {
                     result.AddSkipped(filePath, "File locked");
                     if (options.Verbose)
