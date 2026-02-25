@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(head:*)",
+      "Bash('/c/Program Files \\(x86\\)/Microsoft Visual Studio/2019/BuildTools/MSBuild/Current/Bin/MSBuild.exe':*)",
+      "Bash(MSBuild.exe \"C:\\\\Users\\\\ferreroluca\\\\OneDrive - BOEMA S.P.A\\\\VS PROJ\\\\Csharp_Folder_Tools\\\\FolderTools.sln\" /p:Configuration=Debug /p:Platform=x86 /verbosity:minimal 2>&1 || \"/c/Program Files \\(x86\\)/Microsoft Visual Studio/2019/BuildTools/MSBuild/Current/Bin/MSBuild.exe\" \"C:\\\\Users\\\\ferreroluca\\\\OneDrive - BOEMA S.P.A\\\\VS PROJ\\\\Csharp_Folder_Tools\\\\FolderTools.sln\" /p:Configuration=Debug /p:Platform=x86 /verbosity:minimal 2>&1)",
+      "Bash(powershell.exe:*)",
+      "Bash(cd 'C:/Users/ferreroluca/OneDrive - BOEMA S.P.A/VS PROJ/Csharp_Folder_Tools/FolderTools' && dotnet build FolderTools.netcore.csproj 2>&1)",
+      "Bash('C:/Users/ferreroluca/OneDrive - BOEMA S.P.A/VS PROJ/Csharp_Folder_Tools/FolderTools/bin/Debug/net8.0/FolderTools.exe':*)",
+      "Bash(cd:*)"
+    ]
+  }
+}
