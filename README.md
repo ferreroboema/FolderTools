@@ -1,8 +1,8 @@
 # FolderTools - CLI Find and Replace Tool
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/yourusername/FolderTools)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/ferreroboema/FolderTools)
 [![.NET](https://img.shields.io/badge/.NET-Framework%204.8.1-purple)](https://dotnet.microsoft.com/download/dotnet-framework)
-[![Tests](https://img.shields.io/badge/tests-197%20passed-success)](https://github.com/yourusername/FolderTools)
+[![Tests](https://img.shields.io/badge/tests-197%20passed-success)](https://github.com/ferreroboema/FolderTools)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)](https://microsoft.com/windows)
 
@@ -63,37 +63,109 @@
 
 ### Prerequisites
 
-- .NET Framework 4.8.1 Developer Pack (for building from source)
-- .NET Framework 4.8.1 Runtime (for running the executable)
+- .NET Framework 4.8.1 Runtime (pre-installed on Windows 10+)
 - Windows 10 or later
-- .NET SDK 10.0 or later (for `dotnet build` CLI support)
+
+### Quick Install (Recommended)
+
+The easiest way to install FolderTools is using the PowerShell installer:
+
+```powershell
+# One-line installation
+irm https://raw.githubusercontent.com/ferreroboema/FolderTools/main/install.ps1 | iex
+```
+
+This will:
+- Download the latest FolderTools.exe
+- Install to `%LOCALAPPDATA%\FolderTools`
+- Add to your user PATH automatically
+- Create uninstall script for easy removal
+
+After installation, **restart your terminal** and run:
+
+```bash
+FolderTools --help
+```
+
+Or use the shorthand alias:
+```bash
+ft --help
+```
+
+### Manual Installation
+
+#### Download Release
+
+1. Grab the latest executable from the [Releases](https://github.com/ferreroboema/FolderTools/releases) page
+2. Place `FolderTools.exe` in a directory of your choice
+3. Add that directory to your PATH:
+
+**Using PowerShell (run as Administrator):**
+```powershell
+[Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\Your\Path\Here", "Machine")
+```
+
+**Using GUI:**
+1. Search for "Environment Variables" in Windows
+2. Click "Environment Variables"
+3. Edit "Path" under User variables
+4. Add the directory containing `FolderTools.exe`
 
 ### Build from Source
 
+If you want to build from source:
+
 ```bash
-git clone https://github.com/yourusername/FolderTools.git
+git clone https://github.com/ferreroboema/FolderTools.git
 cd FolderTools
 dotnet build FolderTools.sln -c Release
 ```
 
-### Download Release
+Then run the local installer:
+```powershell
+.\install.ps1 -Local
+```
 
-Grab the latest executable from the [Releases](https://github.com/yourusername/FolderTools/releases) page.
+### Usage Without .exe Extension
+
+Once FolderTools is in your PATH, you can run commands without the `.exe` extension:
+
+```bash
+# Full command name
+FolderTools "search" "replace" "C:\MyFolder" -e ".txt"
+
+# Shorthand alias
+ft "search" "replace" "C:\MyFolder" -e ".txt"
+```
+
+### Uninstall
+
+To remove FolderTools from your system:
+
+```powershell
+# If you used the installer, run:
+& "$env:LOCALAPPDATA\FolderTools\uninstall.ps1"
+
+# Or download and run the uninstall script:
+irm https://raw.githubusercontent.com/ferreroboema/FolderTools/main/uninstall.ps1 | iex
+```
 
 ## Usage
+
+> **Note:** Once FolderTools is installed and added to PATH, you can use commands without the `.exe` extension. The examples below show the cleaner syntax.
 
 ### Basic Syntax
 
 #### Standard Mode (Single Operation)
 ```bash
-FolderTools.exe <search-pattern> <replace-pattern> <directory> [options]
+FolderTools <search-pattern> <replace-pattern> <directory> [options]
 ```
 
 #### Bulk Mode (Multiple Operations)
 ```bash
-FolderTools.exe --bulk-file <csv-file> <directory> [options]
+FolderTools --bulk-file <csv-file> <directory> [options]
 # or
-FolderTools.exe -b <csv-file> <directory> [options]
+FolderTools -b <csv-file> <directory> [options]
 ```
 
 ### Required Arguments
@@ -138,7 +210,7 @@ FolderTools.exe -b <csv-file> <directory> [options]
 Replace "old" with "new" in all text files:
 
 ```bash
-FolderTools.exe "old" "new" "C:\MyProject" -e ".txt"
+FolderTools "old" "new" "C:\MyProject" -e ".txt"
 ```
 
 ### Preview Changes (Dry-Run)
@@ -146,7 +218,7 @@ FolderTools.exe "old" "new" "C:\MyProject" -e ".txt"
 See what would change without modifying files:
 
 ```bash
-FolderTools.exe "TODO" "FIXME" "C:\MyProject" --dry-run -v
+FolderTools "TODO" "FIXME" "C:\MyProject" --dry-run -v
 ```
 
 ### Regex Pattern Matching
@@ -154,7 +226,7 @@ FolderTools.exe "TODO" "FIXME" "C:\MyProject" --dry-run -v
 Replace all digit sequences with "NUM":
 
 ```bash
-FolderTools.exe "\d+" "NUM" "C:\MyProject" -r -e ".txt"
+FolderTools "\d+" "NUM" "C:\MyProject" -r -e ".txt"
 ```
 
 ### Case Sensitive Search
@@ -162,7 +234,7 @@ FolderTools.exe "\d+" "NUM" "C:\MyProject" -r -e ".txt"
 Replace "Foo" but not "foo":
 
 ```bash
-FolderTools.exe "Foo" "Bar" "C:\MyProject" -c
+FolderTools "Foo" "Bar" "C:\MyProject" -c
 ```
 
 ### Filter by Filename Pattern
@@ -170,7 +242,7 @@ FolderTools.exe "Foo" "Bar" "C:\MyProject" -c
 Process only files matching "*config*":
 
 ```bash
-FolderTools.exe "localhost" "production.server.com" "C:\MyProject" -f "*config*"
+FolderTools "localhost" "production.server.com" "C:\MyProject" -f "*config*"
 ```
 
 ### Limit Directory Depth
@@ -178,7 +250,7 @@ FolderTools.exe "localhost" "production.server.com" "C:\MyProject" -f "*config*"
 Only search current directory (no recursion):
 
 ```bash
-FolderTools.exe "temp" "tmp" "C:\MyProject" --max-depth 0
+FolderTools "temp" "tmp" "C:\MyProject" --max-depth 0
 ```
 
 ### Multiple File Extensions
@@ -186,7 +258,7 @@ FolderTools.exe "temp" "tmp" "C:\MyProject" --max-depth 0
 Process both `.cs` and `.vb` files:
 
 ```bash
-FolderTools.exe "MyNamespace" "NewNamespace" "C:\MyProject" -e ".cs,.vb"
+FolderTools "MyNamespace" "NewNamespace" "C:\MyProject" -e ".cs,.vb"
 ```
 
 ### Verbose Output for Debugging
@@ -194,7 +266,7 @@ FolderTools.exe "MyNamespace" "NewNamespace" "C:\MyProject" -e ".cs,.vb"
 See detailed information about each file:
 
 ```bash
-FolderTools.exe "oldValue" "newValue" "C:\MyProject" -v --dry-run
+FolderTools "oldValue" "newValue" "C:\MyProject" -v --dry-run
 ```
 
 ## Bulk Mode (Batch Operations)
@@ -234,14 +306,14 @@ foo,bar
 
 Run bulk mode:
 ```bash
-FolderTools.exe --bulk-file replacements.csv "C:\MyFolder" -e ".txt"
+FolderTools --bulk-file replacements.csv "C:\MyFolder" -e ".txt"
 ```
 
 #### Bulk Mode with Dry-Run
 
 Preview all changes before applying:
 ```bash
-FolderTools.exe -b replacements.csv "C:\MyFolder" --dry-run -v
+FolderTools -b replacements.csv "C:\MyFolder" --dry-run -v
 ```
 
 #### Complex CSV with Commas and Comments
@@ -257,13 +329,13 @@ TODO,  (empty replacement deletes TODO comments)
 
 Run with options:
 ```bash
-FolderTools.exe -b complex.csv "C:\MyProject" -e ".cs,.js,.json" -c -v
+FolderTools -b complex.csv "C:\MyProject" -e ".cs,.js,.json" -c -v
 ```
 
 #### Bulk Mode with All Filters
 
 ```bash
-FolderTools.exe --bulk-file pairs.csv "C:\Project" \
+FolderTools --bulk-file pairs.csv "C:\Project" \
   -e ".cs,.vb,.js" \
   -f "*config*" \
   --max-depth 3 \
@@ -332,7 +404,7 @@ Use the `--collision-behavior` flag to control how collisions are handled:
 
 **Default prompt behavior:**
 ```bash
-FolderTools.exe --bulk-file pairs.csv "C:\MyFolder"
+FolderTools --bulk-file pairs.csv "C:\MyFolder"
 ```
 
 Output when collisions detected:
@@ -357,17 +429,17 @@ Do you want to continue? (Y/n):
 
 **Warn mode (non-interactive):**
 ```bash
-FolderTools.exe --bulk-file pairs.csv "C:\MyFolder" --collision-behavior warn
+FolderTools --bulk-file pairs.csv "C:\MyFolder" --collision-behavior warn
 ```
 
 **Fail mode (for CI/CD):**
 ```bash
-FolderTools.exe --bulk-file pairs.csv "C:\MyFolder" --collision-behavior fail
+FolderTools --bulk-file pairs.csv "C:\MyFolder" --collision-behavior fail
 ```
 
 **Ignore mode (silent):**
 ```bash
-FolderTools.exe --bulk-file pairs.csv "C:\MyFolder" --collision-behavior ignore
+FolderTools --bulk-file pairs.csv "C:\MyFolder" --collision-behavior ignore
 ```
 
 ## Testing
@@ -491,7 +563,7 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for gui
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/FolderTools.git
+git clone https://github.com/ferreroboema/FolderTools.git
 cd FolderTools
 
 # Build the solution
@@ -611,8 +683,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/FolderTools/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/FolderTools/discussions)
+- **Issues**: [GitHub Issues](https://github.com/ferreroboema/FolderTools/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/ferreroboema/FolderTools/discussions)
 - **Email**: support@foldertools.dev
 
 ---
