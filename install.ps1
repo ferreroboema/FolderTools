@@ -13,8 +13,7 @@ $ErrorActionPreference = "Stop"
 $RepoUrl = "https://github.com/ferreroboema/FolderTools"
 $ApiUrl = "https://api.github.com/repos/ferreroboema/FolderTools/releases"
 
-function Write-ColorOutput {
-    param([string]$Message, [string]$Color = "White")
+function Write-ColorOutput($Message, $Color = "White") {
     Write-Host $Message -ForegroundColor $Color
 }
 
@@ -65,27 +64,23 @@ function Download-FolderTools {
     }
 }
 
-function Test-Installation {
-    param([string]$Path)
-
+function Test-Installation($Path) {
     Write-ColorOutput "`nVerifying installation..." "Cyan"
 
     # Test if FolderTools is accessible
     $testResult = & "$Path\FolderTools.exe" --help 2>&1
 
     if (($LASTEXITCODE -eq 0) -or ($testResult -match "Usage|help|FolderTools")) {
-        Write-ColorOutput "  ✓ FolderTools is working correctly!" "Green"
+        Write-ColorOutput "  FolderTools is working correctly!" "Green"
         return $true
     }
     else {
-        Write-ColorOutput "  ✗ Verification failed: $testResult" "Red"
+        Write-ColorOutput "  Verification failed: $testResult" "Red"
         return $false
     }
 }
 
-function Add-ToPath {
-    param([string]$Path)
-
+function Add-ToPath($Path) {
     Write-ColorOutput "`nAdding to PATH..." "Cyan"
 
     # Get current user PATH
@@ -93,7 +88,7 @@ function Add-ToPath {
 
     # Check if already in PATH
     if ($currentUserPath -split ";" | Where-Object { $_ -eq $InstallPath }) {
-        Write-ColorOutput "  ✓ Already in PATH" "Yellow"
+        Write-ColorOutput "  Already in PATH" "Yellow"
         return $true
     }
 
@@ -107,20 +102,18 @@ function Add-ToPath {
 
     try {
         [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
-        Write-ColorOutput "  ✓ Added to user PATH successfully" "Green"
+        Write-ColorOutput "  Added to user PATH successfully" "Green"
         Write-ColorOutput "  Note: Restart your terminal for PATH changes to take effect" "Yellow"
         return $true
     }
     catch {
-        Write-ColorOutput "  ✗ Failed to add to PATH: $_" "Red"
+        Write-ColorOutput "  Failed to add to PATH: $_" "Red"
         Write-ColorOutput "  You can manually add '$InstallPath' to your PATH" "Yellow"
         return $false
     }
 }
 
-function Install-FolderTools {
-    param([string]$SourcePath)
-
+function Install-FolderTools($SourcePath) {
     Write-ColorOutput "`n=== FolderTools Installation ===" "Cyan"
     Write-ColorOutput "Install path: $InstallPath" "Gray"
 
@@ -143,12 +136,12 @@ function Install-FolderTools {
     # Copy executable
     Write-ColorOutput "`nCopying files..." "Cyan"
     Copy-Item -Path $SourcePath -Destination "$InstallPath\FolderTools.exe" -Force
-    Write-ColorOutput "  ✓ Installed FolderTools.exe" "Green"
+    Write-ColorOutput "  Installed FolderTools.exe" "Green"
 
     # Create batch wrapper for convenience
     $batchContent = "@echo off`n`"$InstallPath\FolderTools.exe`" %*"
     Set-Content -Path "$InstallPath\FolderTools.bat" -Value $batchContent
-    Write-ColorOutput "  ✓ Created FolderTools.bat wrapper" "Green"
+    Write-ColorOutput "  Created FolderTools.bat wrapper" "Green"
 
     # Add to PATH
     $pathAdded = Add-ToPath -Path $InstallPath
@@ -175,7 +168,7 @@ Write-Host "`nFolderTools has been uninstalled." -ForegroundColor Green
 Write-Host "Please restart your terminal for PATH changes to take effect." -ForegroundColor Yellow
 "@
     Set-Content -Path "$InstallPath\uninstall.ps1" -Value $uninstallScript
-    Write-ColorOutput "  ✓ Created uninstall.ps1" "Green"
+    Write-ColorOutput "  Created uninstall.ps1" "Green"
 
     # Test installation
     $success = Test-Installation -Path $InstallPath
@@ -190,7 +183,7 @@ Write-Host "Please restart your terminal for PATH changes to take effect." -Fore
         Write-ColorOutput "Restart your terminal and run:" "Cyan"
         Write-ColorOutput "  FolderTools --help" "White"
         Write-ColorOutput "`nOr without restarting (current session only):" "Yellow"
-        Write-ColorOutput "  `$env:Path = [Environment]::GetEnvironmentVariable(`"Path`", `"User`")" "Gray"
+        Write-ColorOutput '  $env:Path = [Environment]::GetEnvironmentVariable("Path", "User")' "Gray"
     }
     else {
         Write-ColorOutput "`nTo use FolderTools from anywhere, add this to your PATH:" "Yellow"
