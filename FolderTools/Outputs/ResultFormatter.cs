@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using FolderTools.Models;
 using FolderTools.Utilities;
 
@@ -230,6 +231,44 @@ namespace FolderTools.Outputs
             Console.WriteLine($"Pairs processed: {result.TotalPairs} total, {result.SuccessfulPairs} successful, {result.FailedPairs} failed");
             Console.WriteLine($"Total files processed: {result.TotalFilesProcessed}");
             Console.WriteLine($"Total replacements: {result.TotalReplacements}");
+        }
+
+        /// <summary>
+        /// Prints collision warnings for bulk mode operations
+        /// </summary>
+        /// <param name="collisionResult">The collision detection result</param>
+        public void PrintCollisionWarnings(CollisionDetectionResult collisionResult)
+        {
+            if (collisionResult == null || !collisionResult.HasCollisions)
+                return;
+
+            Console.WriteLine();
+            Console.WriteLine("=== POTENTIAL COLLISIONS DETECTED ===");
+            Console.WriteLine();
+
+            for (int i = 0; i < collisionResult.Collisions.Count; i++)
+            {
+                var collision = collisionResult.Collisions[i];
+                int pairCount = collision.CollisionChain.Count;
+
+                Console.WriteLine($"Chain collision detected ({pairCount} pair{(pairCount > 1 ? "s" : "")}):");
+                WriteSuccess($"  {collision.GetChainVisualization()}");
+
+                // Print detailed chain info
+                var details = collision.GetDetailedChainInfo();
+                foreach (var detail in details)
+                {
+                    Console.WriteLine($"  {detail}");
+                }
+
+                Console.WriteLine();
+            }
+
+            Console.WriteLine("Expected behavior:");
+            Console.WriteLine("  Pairs are processed sequentially in the order they appear in the CSV file.");
+            Console.WriteLine("  If a replacement value becomes a search pattern in a later pair,");
+            Console.WriteLine("  it will be replaced again by that later pair.");
+            Console.WriteLine();
         }
 
         private string GetRelativePath(string basePath, string fullPath)

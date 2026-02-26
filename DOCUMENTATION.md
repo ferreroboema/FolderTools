@@ -76,7 +76,9 @@ FolderTools/
 │   ├── CommandLineParser.cs        # Argument parsing
 │   ├── FileHelper.cs               # Static file system operations
 │   ├── FileHelperWrapper.cs        # IFileHelper implementation
-│   └── EncodingHelper.cs           # Encoding detection
+│   ├── EncodingHelper.cs           # Encoding detection
+│   ├── CsvSearchReplaceParser.cs   # CSV file parser for bulk mode
+│   └── BulkCollisionValidator.cs   # Collision detection for bulk mode
 │
 ├── Outputs/                        # Output formatting
 │   └── ResultFormatter.cs          # Console output
@@ -135,6 +137,7 @@ public class SearchOptions
     public bool Verbose { get; set; }                // Verbose output
     public bool Quiet { get; set; }                  // Quiet mode
     public bool IncludeHidden { get; set; }          // Include hidden files
+    public CollisionBehavior CollisionBehavior { get; set; }  // Bulk mode collision handling
 }
 ```
 
@@ -306,6 +309,90 @@ ProcessDirectory(root, options, filter)
         ├── Check max depth limit
         └── ProcessDirectory(subdirectory, options, filter, depth+1)
 ```
+
+## Collision Detection (Bulk Mode)
+
+### Overview
+
+In bulk mode, collision detection prevents unintended behavior when replacement values from one pair become search patterns in subsequent pairs.
+
+### The Collision Problem
+
+When pairs are processed sequentially, a replacement value from an earlier pair can match a search pattern in a later pair, causing unexpected replacements.
+
+**Example:**
+```csv
+V123,V146
+V146,V178
+```
+
+Expected: V123 → V146 (stays V146), V146 → V178
+Actual: Both V123 and V146 become V178
+
+### Detection Algorithm
+
+The `BulkCollisionValidator` uses an O(n) algorithm:
+
+```
+1. Build dictionary: search pattern → list of pairs
+   Input: [(V123→V146), (V146→V178)]
+   Dict: {V123: [pair1], V146: [pair2]}
+
+2. For each pair, check if replacement exists as search pattern
+   Pair1: V146 → found in dict → collision!
+   Pair2: V178 → not found → no collision
+
+3. Build chains by following replacement links
+   Chain: [V123→V146] → [V146→V178]
+
+4. Merge overlapping chains to avoid duplicates
+
+5. Skip edge cases:
+   - Empty replacements (deletions)
+   - Self-references (A→A)
+```
+
+### Collision Behavior Modes
+
+| Mode | Behavior |
+|------|----------|
+| `prompt` | Show warnings, wait for user input |
+| `warn` | Show warnings, continue automatically |
+| `fail` | Exit with error code immediately |
+| `ignore` | Silent mode, no warnings |
+
+### Data Structures
+
+#### CollisionInfo
+```csharp
+public class CollisionInfo
+{
+    public List<SearchReplacePair> CollisionChain { get; set; }
+    string GetChainVisualization();        // "A" -> "B" -> "C"
+    List<string> GetDetailedChainInfo();   // Line-by-line details
+}
+```
+
+#### CollisionDetectionResult
+```csharp
+public class CollisionDetectionResult
+{
+    public List<CollisionInfo> Collisions { get; set; }
+    public bool HasCollisions { get; }      // true if any collisions
+    public int CollisionCount { get; }      // number of collisions
+    string GetSummaryMessage();            // summary string
+}
+```
+
+### Edge Cases Handled
+
+| Case | Handling |
+|------|----------|
+| Empty replacement | Skipped (deletion is intentional) |
+| Self-reference (A→A) | Skipped (no-op, not a collision) |
+| Circular (A→B, B→A) | Detected with cycle limit (100) |
+| Multiple chains | Reported separately |
+| Overlapping chains | Merged to avoid duplicates |
 
 ## Encoding Detection
 

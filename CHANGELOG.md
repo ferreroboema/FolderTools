@@ -8,6 +8,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Collision Detection for Bulk Mode**: Automatic detection of potential collisions in bulk mode
+  - Detects when replacement values from one pair become search patterns in subsequent pairs
+  - Chain visualization: Shows full collision chain (e.g., "V123" -> "V146" -> "V178")
+  - Four behavior modes: `prompt` (default), `warn`, `fail`, `ignore`
+  - Handles edge cases: empty replacements, self-references, circular references
+  - O(n) time complexity algorithm with chain merging
+  - Clear warnings with line numbers and expected behavior explanation
+
+#### New Models
+- **CollisionInfo**: Represents a single collision with chain visualization and detailed info
+- **CollisionDetectionResult**: Aggregates all collisions with summary messages
+- **CollisionBehavior Enum**: Prompt, Warn, Fail, Ignore options for bulk mode
+
+#### New Services
+- **BulkCollisionValidator**: O(n) collision detection algorithm with chain tracking
+
+#### New CLI Options
+- `--collision-behavior <mode>`: Configure how to handle collisions (prompt/warn/fail/ignore)
+
+#### Enhanced Output
+- `PrintCollisionWarnings()`: Displays collision chains with line numbers and explanations
+- User prompt in prompt mode with Y/n confirmation
+- Clear explanation of sequential processing behavior
+
+#### New Unit Tests
+- **BulkCollisionValidatorTests**: 14 tests covering:
+  - No collisions, simple collisions, chains
+  - Multiple independent chains, circular references
+  - Empty replacements, self-references, edge cases
+  - Chain visualization and summary messages
+
 - **Bulk/Batch Mode**: Process multiple search/replace operations from a CSV file
   - New `--bulk-file` / `-b` CLI flag for bulk mode
   - CSV file format: `search,replacement` pairs (one per line)
@@ -78,7 +109,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Help now works with just `FolderTools.exe --help` without requiring positional arguments
 
 ### Test Results
-- **Passing**: 183 tests (100%)
+- **Passing**: 197 tests (100%)
 
 ### Planned Features
 - Linux/macOS support

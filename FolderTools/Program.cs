@@ -4,6 +4,7 @@ using FolderTools.Models;
 using FolderTools.Services;
 using FolderTools.Utilities;
 using FolderTools.Outputs;
+using System.IO;
 
 namespace FolderTools
 {
@@ -136,6 +137,46 @@ namespace FolderTools
                 return 1;
             }
 
+            // Detect collisions before processing
+            var collisionValidator = new BulkCollisionValidator();
+            var collisionResult = collisionValidator.DetectCollisions(pairs);
+
+            if (collisionResult.HasCollisions)
+            {
+                bool shouldContinue = false;
+
+                switch (options.CollisionBehavior)
+                {
+                    case CollisionBehavior.Fail:
+                        formatter.PrintError($"Collisions detected: {collisionResult.GetSummaryMessage()}");
+                        formatter.PrintCollisionWarnings(collisionResult);
+                        return 1;
+
+                    case CollisionBehavior.Ignore:
+                        shouldContinue = true;
+                        break;
+
+                    case CollisionBehavior.Warn:
+                        formatter.PrintWarning($"Collisions detected: {collisionResult.GetSummaryMessage()}");
+                        formatter.PrintCollisionWarnings(collisionResult);
+                        shouldContinue = true;
+                        break;
+
+                    case CollisionBehavior.Prompt:
+                    default:
+                        formatter.PrintWarning($"Collisions detected: {collisionResult.GetSummaryMessage()}");
+                        formatter.PrintCollisionWarnings(collisionResult);
+                        shouldContinue = PromptUserToContinue();
+                        break;
+                }
+
+                if (!shouldContinue)
+                {
+                    formatter.PrintInfo("Operation cancelled by user.");
+                    return 0;
+                }
+            }
+
             // Print bulk header
             if (!options.Quiet)
             {
@@ -170,6 +211,19 @@ namespace FolderTools
 
             // Return exit code based on whether there were any failed pairs
             return bulkResult.FailedPairs > 0 ? 1 : 0;
+        }
+
+        /// <summary>
+        /// Prompts the user to continue when collisions are detected
+        /// </summary>
+        /// <returns>True if user wants to continue, false otherwise</returns>
+        private static bool PromptUserToContinue()
+        {
+            Console.Write("Do you want to continue? (Y/n): ");
+            string response = Console.ReadLine()?.Trim().ToLower();
+
+            // Default to yes if user just presses Enter
+            return string.IsNullOrEmpty(response) || response == "y" || response == "yes";
         }
     }
 }

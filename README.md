@@ -2,7 +2,7 @@
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/yourusername/FolderTools)
 [![.NET](https://img.shields.io/badge/.NET-Framework%204.8.1-purple)](https://dotnet.microsoft.com/download/dotnet-framework)
-[![Tests](https://img.shields.io/badge/tests-183%20passed-success)](https://github.com/yourusername/FolderTools)
+[![Tests](https://img.shields.io/badge/tests-197%20passed-success)](https://github.com/yourusername/FolderTools)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)](https://microsoft.com/windows)
 
@@ -46,6 +46,7 @@
 | **Encoding Detection** | ✅ Complete | Auto-detect UTF-8, ASCII, Unicode encodings |
 | **Color Output** | ✅ Complete | Color-coded console output for success/errors |
 | **Error Handling** | ✅ Complete | Graceful handling of locked files and permissions |
+| **Collision Detection** | ✅ Complete | Detects potential issues in bulk mode with configurable behavior |
 
 ### Advanced Features
 
@@ -125,6 +126,7 @@ FolderTools.exe -b <csv-file> <directory> [options]
 | `--encoding <type>` | | Text encoding: `auto`, `utf8`, `ascii`, `unicode` |
 | `--include-hidden` | | Include hidden/system files |
 | `--max-depth <number>` | | Maximum recursion depth (0 = current dir only) |
+| `--collision-behavior <mode>` | | How to handle bulk collisions: `prompt`, `warn`, `fail`, `ignore` |
 | `--verbose` | `-v` | Verbose output with per-file details |
 | `--quiet` | `-q` | Quiet mode (minimal output) |
 | `--help` | `-h` | Show help message |
@@ -296,6 +298,78 @@ Total files processed: 15
 Total replacements: 23
 ```
 
+### Collision Detection in Bulk Mode
+
+Bulk mode includes automatic collision detection to prevent unintended behavior when replacement values from one pair become search patterns in subsequent pairs.
+
+#### What Are Collisions?
+
+A collision occurs when a replacement value from one pair matches a search pattern in a later pair. Because pairs are processed sequentially, this can cause unexpected results.
+
+**Example of a collision:**
+```csv
+V123,V146
+V146,V178
+```
+
+Expected by user: V123 → V146 (and stays V146), V146 → V178
+Actual behavior: Both V123 and V146 become V178 because:
+1. First pair: V123 → V146
+2. Second pair: V146 → V178 (affects both original V146 AND the newly replaced V146)
+
+#### Collision Behavior Modes
+
+Use the `--collision-behavior` flag to control how collisions are handled:
+
+| Mode | Description |
+|------|-------------|
+| `prompt` | **(default)** Show warnings and ask user before continuing |
+| `warn` | Show warnings but continue automatically |
+| `fail` | Exit immediately with error code if collisions detected |
+| `ignore` | Silent mode - no warnings, continue processing |
+
+#### Collision Detection Examples
+
+**Default prompt behavior:**
+```bash
+FolderTools.exe --bulk-file pairs.csv "C:\MyFolder"
+```
+
+Output when collisions detected:
+```
+WARNING: Collisions detected: 1 collision(s) detected involving 2 pair(s).
+
+=== POTENTIAL COLLISIONS DETECTED ===
+
+Chain collision detected (2 pairs):
+  "V123" -> "V146"
+  Line 1: "V123" -> "V146"
+    This value will be replaced again by line 2
+  Line 2: "V146" -> "V178"
+
+Expected behavior:
+  Pairs are processed sequentially in the order they appear in the CSV file.
+  If a replacement value becomes a search pattern in a later pair,
+  it will be replaced again by that later pair.
+
+Do you want to continue? (Y/n):
+```
+
+**Warn mode (non-interactive):**
+```bash
+FolderTools.exe --bulk-file pairs.csv "C:\MyFolder" --collision-behavior warn
+```
+
+**Fail mode (for CI/CD):**
+```bash
+FolderTools.exe --bulk-file pairs.csv "C:\MyFolder" --collision-behavior fail
+```
+
+**Ignore mode (silent):**
+```bash
+FolderTools.exe --bulk-file pairs.csv "C:\MyFolder" --collision-behavior ignore
+```
+
 ## Testing
 
 ### Test Architecture
@@ -324,7 +398,8 @@ FolderTools uses a dependency injection pattern to enable comprehensive unit tes
 | FileHelper | 12 | ✅ Pass | File operations and utilities |
 | EncodingHelper | 10 | ✅ Pass | Encoding detection |
 | ResultFormatter | 15 | ✅ Pass | Standard + bulk mode output |
-| **Total** | **183** | **✅ 100%** | **All tests passing** |
+| BulkCollisionValidator | 14 | ✅ Pass | Collision detection algorithm |
+| **Total** | **197** | **✅ 100%** | **All tests passing** |
 
 ### Writing New Tests
 
@@ -387,7 +462,7 @@ Test fixtures are located in `FolderTools.Tests/TestData/`:
 | Binary Detection | ✅ Complete | 100% |
 | CLI Parser | ✅ Complete | 100% |
 | Error Handling | ✅ Complete | 100% |
-| Unit Tests | ✅ Complete | 100% (183/183 passing) |
+| Unit Tests | ✅ Complete | 100% (197/197 passing) |
 | Documentation | ✅ Complete | 100% |
 | CI/CD Pipeline | 🔄 Planned | 0% |
 
@@ -436,8 +511,8 @@ dotnet run --project FolderTools/FolderTools.csproj -- "search" "replace" "."
 
 The project includes comprehensive unit tests using **xUnit**, **Moq**, and **FluentAssertions**:
 
-- **Total Tests**: 183
-- **Passing**: 183 (100%)
+- **Total Tests**: 197
+- **Passing**: 197 (100%)
 - **Test Framework**: xUnit 2.7+
 - **Mocking**: Moq 4.20+
 - **Assertions**: FluentAssertions 6.12+
@@ -476,7 +551,8 @@ FolderTools/
 │   │   ├── ReplacementResult.cs
 │   │   ├── FileFilter.cs
 │   │   ├── SearchReplacePair.cs    # Bulk mode pair model
-│   │   └── BulkReplacementResult.cs # Bulk mode result model
+│   │   ├── BulkReplacementResult.cs # Bulk mode result model
+│   │   └── CollisionInfo.cs        # Collision detection model
 │   ├── Services/                   # Business logic
 │   │   ├── IFileProcessor.cs       # File processor interface
 │   │   ├── IFileHelper.cs          # File helper interface (for DI)
@@ -489,7 +565,8 @@ FolderTools/
 │   │   ├── FileHelperWrapper.cs    # Wrapper for IFileHelper
 │   │   ├── EncodingHelper.cs       # Encoding detection
 │   │   ├── CommandLineParser.cs    # CLI argument parser
-│   │   └── CsvSearchReplaceParser.cs # CSV file parser for bulk mode
+│   │   ├── CsvSearchReplaceParser.cs # CSV file parser for bulk mode
+│   │   └── BulkCollisionValidator.cs # Collision detection for bulk mode
 │   ├── Outputs/                    # Output formatting
 │   │   └── ResultFormatter.cs      # Console output formatter
 │   └── Program.cs                  # Entry point
@@ -509,7 +586,8 @@ FolderTools/
     │   ├── CommandLineParserTests.cs
     │   ├── CsvSearchReplaceParserTests.cs
     │   ├── FileHelperTests.cs
-    │   └── EncodingHelperTests.cs
+    │   ├── EncodingHelperTests.cs
+    │   └── BulkCollisionValidatorTests.cs
     ├── Outputs/                    # Output tests
     │   └── ResultFormatterTests.cs
     └── TestData/                   # Test fixtures and files

@@ -49,6 +49,7 @@
     <Compile Include="Models\FileFilter.cs" />
     <Compile Include="Models\SearchReplacePair.cs" />
     <Compile Include="Models\BulkReplacementResult.cs" />
+    <Compile Include="Models\CollisionInfo.cs" />
     <Compile Include="Services\IFileProcessor.cs" />
     <Compile Include="Services\IFileHelper.cs" />
     <Compile Include="Services\FileProcessor.cs" />
@@ -60,6 +61,7 @@
     <Compile Include="Utilities\FileHelperWrapper.cs" />
     <Compile Include="Utilities\EncodingHelper.cs" />
     <Compile Include="Utilities\CsvSearchReplaceParser.cs" />
+    <Compile Include="Utilities\BulkCollisionValidator.cs" />
     <Compile Include="Outputs\ResultFormatter.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -3,6 +3,32 @@ using System;
 namespace FolderTools.Models
 {
     /// <summary>
+    /// Defines how to handle collisions in bulk mode
+    /// </summary>
+    public enum CollisionBehavior
+    {
+        /// <summary>
+        /// Show warnings and prompt user before continuing (default)
+        /// </summary>
+        Prompt,
+
+        /// <summary>
+        /// Show warnings but continue automatically
+        /// </summary>
+        Warn,
+
+        /// <summary>
+        /// Exit immediately if collisions are detected
+        /// </summary>
+        Fail,
+
+        /// <summary>
+        /// Silent mode - no warnings, continue processing
+        /// </summary>
+        Ignore
+    }
+
+    /// <summary>
     /// Configuration options for search and replace operations
     /// </summary>
     public class SearchOptions
@@ -57,6 +83,11 @@ namespace FolderTools.Models
         /// </summary>
         public bool IncludeHidden { get; set; }
 
+        /// <summary>
+        /// Behavior when collisions are detected in bulk mode
+        /// </summary>
+        public CollisionBehavior CollisionBehavior { get; set; }
+
         public SearchOptions()
         {
             IsRegex = false;
@@ -66,6 +97,7 @@ namespace FolderTools.Models
             Verbose = false;
             Quiet = false;
             IncludeHidden = false;
+            CollisionBehavior = CollisionBehavior.Prompt;
         }
     }
 

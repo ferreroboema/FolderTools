@@ -204,6 +204,16 @@ namespace FolderTools.Utilities
                             _currentIndex++;
                             break;
 
+                        case "--collision-behavior":
+                            if (!HasNextArg() || !ParseCollisionBehavior(GetNextArg(), out CollisionBehavior behavior))
+                            {
+                                error = $"Invalid value for {arg}. Valid values: prompt, warn, fail, ignore";
+                                return false;
+                            }
+                            options.CollisionBehavior = behavior;
+                            _currentIndex++;
+                            break;
+
                         case "-h":
                         case "--help":
                             error = "HELP";
@@ -458,6 +468,16 @@ namespace FolderTools.Utilities
                     options.Quiet = true;
                     break;
 
+                case "--collision-behavior":
+                    if (!HasNextArg() || !ParseCollisionBehavior(GetNextArg(), out CollisionBehavior behavior))
+                    {
+                        error = $"Invalid value for {arg}. Valid values: prompt, warn, fail, ignore";
+                        return false;
+                    }
+                    options.CollisionBehavior = behavior;
+                    _currentIndex++;
+                    break;
+
                 case "-h":
                 case "--help":
                     error = "HELP";
@@ -525,6 +545,28 @@ namespace FolderTools.Utilities
             }
         }
 
+        private bool ParseCollisionBehavior(string value, out CollisionBehavior behavior)
+        {
+            switch (value.ToLower())
+            {
+                case "prompt":
+                    behavior = CollisionBehavior.Prompt;
+                    return true;
+                case "warn":
+                    behavior = CollisionBehavior.Warn;
+                    return true;
+                case "fail":
+                    behavior = CollisionBehavior.Fail;
+                    return true;
+                case "ignore":
+                    behavior = CollisionBehavior.Ignore;
+                    return true;
+                default:
+                    behavior = CollisionBehavior.Prompt;
+                    return false;
+            }
+        }
+
         /// <summary>
         /// Displays help information for the command-line tool
         /// </summary>
@@ -556,6 +598,8 @@ namespace FolderTools.Utilities
             Console.WriteLine("  --encoding <utf8|ascii|auto>     Text encoding (default: auto)");
             Console.WriteLine("  --include-hidden                 Include hidden/system files");
             Console.WriteLine("  --max-depth <number>             Maximum recursion depth");
+            Console.WriteLine("  --collision-behavior <mode>      How to handle bulk collisions (default: prompt)");
+            Console.WriteLine("                                   Modes: prompt, warn, fail, ignore");
             Console.WriteLine("  -v, --verbose                    Verbose output");
             Console.WriteLine("  -q, --quiet                      Quiet mode (minimal output)");
             Console.WriteLine("  -h, --help                       Show this help message");
