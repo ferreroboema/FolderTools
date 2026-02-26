@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **FileHelper.FormatFileSize()**: Fixed locale-specific decimal separator issue
+  - Now uses `CultureInfo.InvariantCulture` for consistent decimal separator
+  - Fixes test failures on systems with comma as decimal separator (e.g., "1,5 KB" → "1.5 KB")
+
+- **TextReplacer.ReplaceInFile()**: Added empty pattern validation
+  - Returns -1 (error) when pattern is null or empty
+  - Displays error message in verbose mode: "Pattern cannot be empty"
+
+- **Test data deployment**: Fixed test data file deployment issue
+  - Changed `<None>` to `<Content>` in test project file for proper test output deployment
+
 - **FileFilter.ShouldProcessFile()**: Fixed to handle both filenames and full paths
   - Now extracts filename using `Path.GetFileName()` for pattern matching
   - Only checks file attributes (hidden/system) if file exists
@@ -25,10 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Help now works with just `FolderTools.exe --help` without requiring positional arguments
 
 ### Test Results
-- **Passing**: 122 tests (98%)
-- **Failing**: 2 tests (unrelated to original failures)
-  - FileHelperTests.FormatFileSize (locale-specific decimal separator)
-  - TextReplacerTests.ReplaceInFile_WithEmptyPattern
+- **Passing**: 124 tests (100%)
 
 ### Planned Features
 - Linux/macOS support

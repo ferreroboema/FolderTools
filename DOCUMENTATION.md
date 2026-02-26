@@ -518,7 +518,7 @@ dotnet test FolderTools.Tests/FolderTools.Tests.csproj --collect:"XPlat Code Cov
 | Services | 14 | Medium-High |
 | Utilities | 40 | Medium |
 | Outputs | 12 | High |
-| **Total** | **124** | **85% passing** |
+| **Total** | **124** | **100% passing** |
 
 ### Integration Tests
 

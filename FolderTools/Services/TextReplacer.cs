@@ -31,6 +31,16 @@ namespace FolderTools.Services
         {
             try
             {
+                // Validate pattern
+                if (string.IsNullOrEmpty(options.Pattern))
+                {
+                    if (options.Verbose)
+                    {
+                        Console.WriteLine("  Error: Pattern cannot be empty");
+                    }
+                    return -1;
+                }
+
                 // Read the file content
                 if (!_fileHelper.TryReadFile(filePath, options.Encoding, out string content, out string error))
                 {

@@ -23,9 +23,9 @@
     <ProjectReference Include="..\FolderTools\FolderTools.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="TestData\**\*">
+    <Content Include="TestData\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />

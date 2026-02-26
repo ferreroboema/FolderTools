@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 
 namespace FolderTools.Utilities
@@ -188,7 +189,7 @@ namespace FolderTools.Utilities
                 len = len / 1024;
             }
 
-            return $"{len:0.##} {sizes[order]}";
+            return $"{len.ToString("0.##", CultureInfo.InvariantCulture)} {sizes[order]}";
         }
     }
 }
