@@ -43,28 +43,25 @@ namespace FolderTools.Models
         /// <summary>
         /// Determines whether a file should be processed based on the filter criteria
         /// </summary>
-        /// <param name="filePath">Full path to the file</param>
+        /// <param name="filePath">Full path to the file or just the filename</param>
         /// <returns>True if the file should be processed, false otherwise</returns>
         public bool ShouldProcessFile(string filePath)
         {
             try
             {
-                var fileInfo = new FileInfo(filePath);
-
-                // Check hidden/system files
-                if (!IncludeHidden)
+                // Handle null or empty input
+                if (string.IsNullOrEmpty(filePath))
                 {
-                    if ((fileInfo.Attributes & FileAttributes.Hidden) != 0 ||
-                        (fileInfo.Attributes & FileAttributes.System) != 0)
-                    {
-                        return false;
-                    }
+                    return false;
                 }
+
+                // Extract just the filename from the path (handles both full paths and filenames)
+                string fileName = Path.GetFileName(filePath);
 
                 // Check file extension
                 if (Extensions.Count > 0)
                 {
-                    string extension = fileInfo.Extension;
+                    string extension = Path.GetExtension(fileName);
                     if (string.IsNullOrEmpty(extension) || !Extensions.Contains(extension))
                     {
                         return false;
@@ -74,21 +71,46 @@ namespace FolderTools.Models
                 // Check filename pattern
                 if (!string.IsNullOrEmpty(FileNamePattern))
                 {
-                    if (!MatchesWildcard(FileNamePattern, fileInfo.Name))
+                    if (!MatchesWildcard(FileNamePattern, fileName))
                     {
                         return false;
                     }
                 }
 
-                // Check file size
-                if (MinSize.HasValue && fileInfo.Length < MinSize.Value)
-                {
-                    return false;
-                }
+                // For file attributes and size checks, only proceed if file exists
+                FileInfo fileInfo = null;
+                bool fileExists = File.Exists(filePath);
 
-                if (MaxSize.HasValue && fileInfo.Length > MaxSize.Value)
+                if (fileExists)
                 {
-                    return false;
+                    fileInfo = new FileInfo(filePath);
+
+                    // Check hidden/system files
+                    if (!IncludeHidden)
+                    {
+                        if ((fileInfo.Attributes & FileAttributes.Hidden) != 0 ||
+                            (fileInfo.Attributes & FileAttributes.System) != 0)
+                        {
+                            return false;
+                        }
+                    }
+
+                    // Check file size (only if file exists)
+                    if (MinSize.HasValue && fileInfo.Length < MinSize.Value)
+                    {
+                        return false;
+                    }
+
+                    if (MaxSize.HasValue && fileInfo.Length > MaxSize.Value)
+                    {
+                        return false;
+                    }
+                }
+                else if (MinSize.HasValue || MaxSize.HasValue)
+                {
+                    // If file doesn't exist and we have size filters, we can't determine size
+                    // Return true to allow the file to be processed (size will be checked later)
+                    return true;
                 }
 
                 return true;

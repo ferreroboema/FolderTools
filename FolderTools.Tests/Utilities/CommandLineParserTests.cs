@@ -1,16 +1,22 @@
+using System;
+using System.Reflection;
 using FluentAssertions;
 using FolderTools.Models;
 using FolderTools.Utilities;
+using System.IO;
 using Xunit;
 
 namespace FolderTools.Tests.Utilities
 {
     public class CommandLineParserTests
     {
+        // Use the current directory which should be the test bin directory
+        private static readonly string TestDirectory = Environment.CurrentDirectory;
+
         [Fact]
         public void ParseArguments_WithValidArguments_ShouldParseCorrectly()
         {
-            var args = new[] { "search", "replace", ".", "-e", ".txt,.cs", "-c", "-r" };
+            var args = new[] { "search", "replace", TestDirectory, "-e", ".txt,.cs", "-c", "-r" };
             var parser = new CommandLineParser(args);
             var result = parser.ParseArguments(out var options, out var filter, out var error);
 
@@ -58,7 +64,7 @@ namespace FolderTools.Tests.Utilities
         [Fact]
         public void ParseArguments_WithDryRun_ShouldSetIsDryRun()
         {
-            var args = new[] { "search", "replace", ".", "-d" };
+            var args = new[] { "search", "replace", TestDirectory, "-d" };
             var parser = new CommandLineParser(args);
             var result = parser.ParseArguments(out var options, out var filter, out var error);
 
@@ -69,7 +75,7 @@ namespace FolderTools.Tests.Utilities
         [Fact]
         public void ParseArguments_WithLongDryRunFlag_ShouldSetIsDryRun()
         {
-            var args = new[] { "search", "replace", ".", "--dry-run" };
+            var args = new[] { "search", "replace", TestDirectory, "--dry-run" };
             var parser = new CommandLineParser(args);
             var result = parser.ParseArguments(out var options, out var filter, out var error);
 
@@ -80,7 +86,7 @@ namespace FolderTools.Tests.Utilities
         [Fact]
         public void ParseArguments_WithVerbose_ShouldSetVerbose()
         {
-            var args = new[] { "search", "replace", ".", "-v" };
+            var args = new[] { "search", "replace", TestDirectory, "-v" };
             var parser = new CommandLineParser(args);
             var result = parser.ParseArguments(out var options, out var filter, out var error);
 
@@ -91,7 +97,7 @@ namespace FolderTools.Tests.Utilities
         [Fact]
         public void ParseArguments_WithQuiet_ShouldSetQuiet()
         {
-            var args = new[] { "search", "replace", ".", "-q" };
+            var args = new[] { "search", "replace", TestDirectory, "-q" };
             var parser = new CommandLineParser(args);
             var result = parser.ParseArguments(out var options, out var filter, out var error);
 
@@ -102,7 +108,7 @@ namespace FolderTools.Tests.Utilities
         [Fact]
         public void ParseArguments_WithFileNamePattern_ShouldSetPattern()
         {
-            var args = new[] { "search", "replace", ".", "-f", "*config*" };
+            var args = new[] { "search", "replace", TestDirectory, "-f", "*config*" };
             var parser = new CommandLineParser(args);
             var result = parser.ParseArguments(out var options, out var filter, out var error);
 
@@ -113,7 +119,7 @@ namespace FolderTools.Tests.Utilities
         [Fact]
         public void ParseArguments_WithMinSize_ShouldSetMinSize()
         {
-            var args = new[] { "search", "replace", ".", "--min-size", "1000" };
+            var args = new[] { "search", "replace", TestDirectory, "--min-size", "1000" };
             var parser = new CommandLineParser(args);
             var result = parser.ParseArguments(out var options, out var filter, out var error);
 
@@ -124,7 +130,7 @@ namespace FolderTools.Tests.Utilities
         [Fact]
         public void ParseArguments_WithMaxSize_ShouldSetMaxSize()
         {
-            var args = new[] { "search", "replace", ".", "--max-size", "10000" };
+            var args = new[] { "search", "replace", TestDirectory, "--max-size", "10000" };
             var parser = new CommandLineParser(args);
             var result = parser.ParseArguments(out var options, out var filter, out var error);
 
@@ -135,7 +141,7 @@ namespace FolderTools.Tests.Utilities
         [Fact]
         public void ParseArguments_WithEncoding_ShouldSetEncoding()
         {
-            var args = new[] { "search", "replace", ".", "--encoding", "utf8" };
+            var args = new[] { "search", "replace", TestDirectory, "--encoding", "utf8" };
             var parser = new CommandLineParser(args);
             var result = parser.ParseArguments(out var options, out var filter, out var error);
 
@@ -151,7 +157,7 @@ namespace FolderTools.Tests.Utilities
         [InlineData("unicode", FileEncoding.Unicode)]
         public void ParseArguments_WithDifferentEncodings_ShouldParseCorrectly(string encodingValue, FileEncoding expectedEncoding)
         {
-            var args = new[] { "search", "replace", ".", "--encoding", encodingValue };
+            var args = new[] { "search", "replace", TestDirectory, "--encoding", encodingValue };
             var parser = new CommandLineParser(args);
             var result = parser.ParseArguments(out var options, out var filter, out var error);
 
@@ -162,7 +168,7 @@ namespace FolderTools.Tests.Utilities
         [Fact]
         public void ParseArguments_WithInvalidEncoding_ShouldReturnError()
         {
-            var args = new[] { "search", "replace", ".", "--encoding", "invalid" };
+            var args = new[] { "search", "replace", TestDirectory, "--encoding", "invalid" };
             var parser = new CommandLineParser(args);
             var result = parser.ParseArguments(out var options, out var filter, out var error);
 
@@ -173,7 +179,7 @@ namespace FolderTools.Tests.Utilities
         [Fact]
         public void ParseArguments_WithMaxDepth_ShouldSetMaxDepth()
         {
-            var args = new[] { "search", "replace", ".", "--max-depth", "5" };
+            var args = new[] { "search", "replace", TestDirectory, "--max-depth", "5" };
             var parser = new CommandLineParser(args);
             var result = parser.ParseArguments(out var options, out var filter, out var error);
 
@@ -184,7 +190,7 @@ namespace FolderTools.Tests.Utilities
         [Fact]
         public void ParseArguments_WithIncludeHidden_ShouldSetIncludeHidden()
         {
-            var args = new[] { "search", "replace", ".", "--include-hidden" };
+            var args = new[] { "search", "replace", TestDirectory, "--include-hidden" };
             var parser = new CommandLineParser(args);
             var result = parser.ParseArguments(out var options, out var filter, out var error);
 
@@ -196,7 +202,7 @@ namespace FolderTools.Tests.Utilities
         [Fact]
         public void ParseArguments_WithUnknownArgument_ShouldReturnError()
         {
-            var args = new[] { "search", "replace", ".", "--unknown-arg" };
+            var args = new[] { "search", "replace", TestDirectory, "--unknown-arg" };
             var parser = new CommandLineParser(args);
             var result = parser.ParseArguments(out var options, out var filter, out var error);
 

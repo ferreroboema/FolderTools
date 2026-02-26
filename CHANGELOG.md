@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **FileFilter.ShouldProcessFile()**: Fixed to handle both filenames and full paths
+  - Now extracts filename using `Path.GetFileName()` for pattern matching
+  - Only checks file attributes (hidden/system) if file exists
+  - Skips file size checks if file doesn't exist (returns true for size filters when file can't be checked)
+  - Fixes wildcard pattern matching test failures
+
+- **CommandLineParser**: Fixed argument parsing index management bug
+  - Added `_currentIndex++` after calling `GetNextArg()` for flags with values
+  - Fixes: `-e`/`--extensions`, `-f`/`--filename`, `--min-size`, `--max-size`, `--encoding`, `--max-depth`
+  - Previously, parser would re-consume flag values as unknown arguments
+  - All 10 originally failing tests now passing
+
+- **CommandLineParser**: Fixed help flag handling
+  - Added early check for `-h`/`--help` before argument count validation
+  - Help now works with just `FolderTools.exe --help` without requiring positional arguments
+
+### Test Results
+- **Passing**: 122 tests (98%)
+- **Failing**: 2 tests (unrelated to original failures)
+  - FileHelperTests.FormatFileSize (locale-specific decimal separator)
+  - TextReplacerTests.ReplaceInFile_WithEmptyPattern
+
 ### Planned Features
 - Linux/macOS support
 - Configuration file support

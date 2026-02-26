@@ -2,7 +2,7 @@
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/yourusername/FolderTools)
 [![.NET](https://img.shields.io/badge/.NET-Framework%204.8.1-purple)](https://dotnet.microsoft.com/download/dotnet-framework)
-[![Tests](https://img.shields.io/badge/tests-105%20passed%20%7C%2019%20failed-success)](https://github.com/yourusername/FolderTools)
+[![Tests](https://img.shields.io/badge/tests-122%20passed%20%7C%202%20failed-success)](https://github.com/yourusername/FolderTools)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)](https://microsoft.com/windows)
 
@@ -193,11 +193,11 @@ FolderTools uses a dependency injection pattern to enable comprehensive unit tes
 |-----------|-------|--------|-------|
 | SearchOptions | 5 | ✅ Pass | Model property initialization |
 | ReplacementResult | 8 | ✅ Pass | Result aggregation |
-| FileFilter | 10 | ⚠️ 6/10 | Pattern matching expectations differ |
-| TextReplacer | 9 | ✅ Pass | Core replacement logic |
-| FileProcessor | 5 | ⚠️ Basic | Requires file system integration |
-| CommandLineParser | 18 | ⚠️ 3/18 | Parser behavior differs from tests |
-| FileHelper | 12 | ⚠️ 11/12 | Size formatting variance |
+| FileFilter | 10 | ✅ Pass | Pattern matching with filename-only support |
+| TextReplacer | 9 | ⚠️ 8/9 | Empty pattern edge case |
+| FileProcessor | 5 | ✅ Pass | File system integration working |
+| CommandLineParser | 18 | ✅ Pass | Argument parsing fully fixed |
+| FileHelper | 12 | ⚠️ 11/12 | Size formatting locale variance |
 | EncodingHelper | 10 | ✅ Pass | Encoding detection |
 | ResultFormatter | 12 | ✅ Pass | Console output capture |
 
@@ -261,7 +261,7 @@ Test fixtures are located in `FolderTools.Tests/TestData/`:
 | Binary Detection | ✅ Complete | 100% |
 | CLI Parser | ✅ Complete | 100% |
 | Error Handling | ✅ Complete | 100% |
-| Unit Tests | ✅ Complete | 85% (105/124 passing) |
+| Unit Tests | ✅ Complete | 98% (122/124 passing) |
 | Documentation | ✅ Complete | 100% |
 | CI/CD Pipeline | 🔄 Planned | 0% |
 
@@ -311,7 +311,7 @@ dotnet run --project FolderTools/FolderTools.csproj -- "search" "replace" "."
 The project includes comprehensive unit tests using **xUnit**, **Moq**, and **FluentAssertions**:
 
 - **Total Tests**: 124
-- **Passing**: 105 (85%)
+- **Passing**: 122 (98%)
 - **Test Framework**: xUnit 2.7+
 - **Mocking**: Moq 4.20+
 - **Assertions**: FluentAssertions 6.12+

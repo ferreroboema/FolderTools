@@ -33,6 +33,17 @@ namespace FolderTools.Utilities
 
             try
             {
+                // Check for help flag first (before validating argument count)
+                if (_args.Count > 0)
+                {
+                    string firstArg = _args[0].ToLower();
+                    if (firstArg == "-h" || firstArg == "--help")
+                    {
+                        error = "HELP";
+                        return false;
+                    }
+                }
+
                 // Parse positional arguments first
                 if (_args.Count < 3)
                 {
@@ -71,6 +82,7 @@ namespace FolderTools.Utilities
                                 return false;
                             }
                             filter.AddExtensions(GetNextArg());
+                            _currentIndex++;
                             break;
 
                         case "-f":
@@ -81,6 +93,7 @@ namespace FolderTools.Utilities
                                 return false;
                             }
                             filter.FileNamePattern = GetNextArg();
+                            _currentIndex++;
                             break;
 
                         case "--min-size":
@@ -90,6 +103,7 @@ namespace FolderTools.Utilities
                                 return false;
                             }
                             filter.MinSize = minSize;
+                            _currentIndex++;
                             break;
 
                         case "--max-size":
@@ -99,6 +113,7 @@ namespace FolderTools.Utilities
                                 return false;
                             }
                             filter.MaxSize = maxSize;
+                            _currentIndex++;
                             break;
 
                         case "-c":
@@ -126,6 +141,7 @@ namespace FolderTools.Utilities
                                 return false;
                             }
                             options.Encoding = encoding;
+                            _currentIndex++;
                             break;
 
                         case "--include-hidden":
@@ -141,6 +157,7 @@ namespace FolderTools.Utilities
                                 return false;
                             }
                             options.MaxDepth = maxDepth;
+                            _currentIndex++;
                             break;
 
                         case "-v":
