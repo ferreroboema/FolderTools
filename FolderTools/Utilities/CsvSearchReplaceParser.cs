@@ -91,12 +91,16 @@ namespace FolderTools.Utilities
         }
 
         /// <summary>
-        /// Parses a CSV line, handling quoted strings with commas
+        /// Parses a CSV line, handling quoted strings with commas or semicolons
+        /// Auto-detects delimiter: semicolon (;) takes precedence over comma (,)
         /// </summary>
         /// <param name="line">The line to parse</param>
         /// <returns>List of parsed values</returns>
         private List<string> ParseCsvLine(string line)
         {
+            // Auto-detect delimiter: semicolon takes precedence
+            char delimiter = line.Contains(";") ? ';' : ',';
+
             var values = new List<string>();
             var currentValue = new StringBuilder();
             bool inQuotes = false;
@@ -119,9 +123,9 @@ namespace FolderTools.Utilities
                         inQuotes = !inQuotes;
                     }
                 }
-                else if (c == ',' && !inQuotes)
+                else if (c == delimiter && !inQuotes)
                 {
-                    // Comma outside quotes - this is a separator
+                    // Delimiter outside quotes - this is a separator
                     values.Add(currentValue.ToString());
                     currentValue.Clear();
                 }
