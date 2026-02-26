@@ -73,7 +73,7 @@ function Test-Installation {
     # Test if FolderTools is accessible
     $testResult = & "$Path\FolderTools.exe" --help 2>&1
 
-    if ($LASTEXITCODE -eq 0 -or $testResult -match "Usage|help|FolderTools") {
+    if (($LASTEXITCODE -eq 0) -or ($testResult -match "Usage|help|FolderTools")) {
         Write-ColorOutput "  ✓ FolderTools is working correctly!" "Green"
         return $true
     }
@@ -125,10 +125,11 @@ function Install-FolderTools {
     Write-ColorOutput "Install path: $InstallPath" "Gray"
 
     # Check if already installed
-    if (Test-Path "$InstallPath\FolderTools.exe" -and -not $Force) {
+    $alreadyInstalled = Test-Path "$InstallPath\FolderTools.exe"
+    if ($alreadyInstalled -and (-not $Force)) {
         Write-ColorOutput "`nFolderTools is already installed at: $InstallPath" "Yellow"
         $response = Read-Host "Reinstall? (y/N)"
-        if ($response -ne "y" -and $response -ne "Y") {
+        if (($response -ne "y") -and ($response -ne "Y")) {
             return
         }
     }
