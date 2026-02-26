@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using FolderTools.Models;
 using FolderTools.Services;
 using FolderTools.Utilities;
@@ -45,6 +46,22 @@ namespace FolderTools
                 return 1;
             }
 
+            // Route to appropriate processing mode
+            if (parser.IsBulkMode)
+            {
+                return ProcessBulkMode(parser, rootDirectory, options, filter);
+            }
+            else
+            {
+                return ProcessStandardMode(rootDirectory, options, filter);
+            }
+        }
+
+        /// <summary>
+        /// Processes a single search/replace operation (standard mode)
+        /// </summary>
+        private static int ProcessStandardMode(string rootDirectory, SearchOptions options, FileFilter filter)
+        {
             // Validate that pattern is not empty
             if (string.IsNullOrWhiteSpace(options.Pattern))
             {
@@ -89,6 +106,70 @@ namespace FolderTools
 
             // Return exit code based on whether there were errors
             return result.FilesWithErrors > 0 ? 1 : 0;
+        }
+
+        /// <summary>
+        /// Processes multiple search/replace operations from a CSV file (bulk mode)
+        /// </summary>
+        private static int ProcessBulkMode(CommandLineParser parser, string rootDirectory, SearchOptions options, FileFilter filter)
+        {
+            // Create the result formatter
+            var formatter = new ResultFormatter();
+
+            // Parse the CSV file
+            var csvParser = new CsvSearchReplaceParser();
+            List<SearchReplacePair> pairs;
+
+            try
+            {
+                pairs = csvParser.ParseFile(parser.BulkFilePath);
+
+                if (pairs.Count == 0)
+                {
+                    formatter.PrintError("No valid search/replace pairs found in CSV file");
+                    return 1;
+                }
+            }
+            catch (Exception ex)
+            {
+                formatter.PrintError($"Error reading CSV file: {ex.Message}");
+                return 1;
+            }
+
+            // Print bulk header
+            if (!options.Quiet)
+            {
+                formatter.PrintBulkHeader(parser.BulkFilePath, rootDirectory, pairs.Count, options.IsDryRun);
+            }
+
+            // Create the bulk processor and process all pairs
+            var bulkProcessor = new BulkFileProcessor();
+            BulkReplacementResult bulkResult;
+
+            try
+            {
+                bulkResult = bulkProcessor.ProcessBulk(pairs, rootDirectory, options, filter);
+            }
+            catch (Exception ex)
+            {
+                formatter.PrintError($"Unexpected error during bulk processing: {ex.Message}");
+                return 1;
+            }
+
+            // Print detailed results
+            if (!options.Quiet)
+            {
+                formatter.PrintBulkResults(bulkResult, rootDirectory, options.Verbose);
+            }
+
+            // Print summary
+            if (!options.Quiet)
+            {
+                formatter.PrintBulkSummary(bulkResult, options.IsDryRun);
+            }
+
+            // Return exit code based on whether there were any failed pairs
+            return bulkResult.FailedPairs > 0 ? 1 : 0;
         }
     }
 }

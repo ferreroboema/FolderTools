@@ -229,5 +229,177 @@ namespace FolderTools.Tests.Utilities
 
             rootDir.Should().BeNull();
         }
+
+        // Bulk mode tests
+
+        [Fact]
+        public void ParseArguments_WithBulkFileFlag_ShouldSetIsBulkMode()
+        {
+            // Arrange - Create a test CSV file
+            string testCsvPath = Path.Combine(TestDirectory, "test.csv");
+            File.WriteAllText(testCsvPath, "old,new\nfoo,bar");
+
+            var args = new[] { "--bulk-file", testCsvPath, TestDirectory };
+            var parser = new CommandLineParser(args);
+
+            // Act
+            var result = parser.ParseArguments(out var options, out var filter, out var error);
+
+            // Assert
+            result.Should().BeTrue();
+            parser.IsBulkMode.Should().BeTrue();
+            parser.BulkFilePath.Should().Be(testCsvPath);
+            parser.GetRootDirectory().Should().Be(TestDirectory);
+        }
+
+        [Fact]
+        public void ParseArguments_WithShortBulkFileFlag_ShouldSetIsBulkMode()
+        {
+            // Arrange - Create a test CSV file
+            string testCsvPath = Path.Combine(TestDirectory, "test.csv");
+            File.WriteAllText(testCsvPath, "old,new");
+
+            var args = new[] { "-b", testCsvPath, TestDirectory };
+            var parser = new CommandLineParser(args);
+
+            // Act
+            var result = parser.ParseArguments(out var options, out var filter, out var error);
+
+            // Assert
+            result.Should().BeTrue();
+            parser.IsBulkMode.Should().BeTrue();
+            parser.BulkFilePath.Should().Be(testCsvPath);
+        }
+
+        [Fact]
+        public void ParseArguments_WithBulkModeAndOptions_ShouldParseOptions()
+        {
+            // Arrange - Create a test CSV file
+            string testCsvPath = Path.Combine(TestDirectory, "test.csv");
+            File.WriteAllText(testCsvPath, "old,new");
+
+            var args = new[] { "-b", testCsvPath, TestDirectory, "-e", ".txt,.cs", "-c", "-v", "-d" };
+            var parser = new CommandLineParser(args);
+
+            // Act
+            var result = parser.ParseArguments(out var options, out var filter, out var error);
+
+            // Assert
+            result.Should().BeTrue();
+            parser.IsBulkMode.Should().BeTrue();
+            options.CaseSensitive.Should().BeTrue();
+            options.Verbose.Should().BeTrue();
+            options.IsDryRun.Should().BeTrue();
+            filter.Extensions.Should().Contain(new[] { ".txt", ".cs" });
+        }
+
+        [Fact]
+        public void ParseArguments_WithBulkFileMissingPath_ShouldReturnError()
+        {
+            var args = new[] { "--bulk-file" };
+            var parser = new CommandLineParser(args);
+
+            // Act
+            var result = parser.ParseArguments(out var options, out var filter, out var error);
+
+            // Assert
+            result.Should().BeFalse();
+            error.Should().Contain("Missing value for --bulk-file");
+        }
+
+        [Fact]
+        public void ParseArguments_WithNonExistentCsvFile_ShouldReturnError()
+        {
+            var args = new[] { "--bulk-file", "nonexistent.csv", TestDirectory };
+            var parser = new CommandLineParser(args);
+
+            // Act
+            var result = parser.ParseArguments(out var options, out var filter, out var error);
+
+            // Assert
+            result.Should().BeFalse();
+            error.Should().Contain("CSV file not found");
+        }
+
+        [Fact]
+        public void ParseArguments_WithBulkModeDirectoryAfterCsv_ShouldParseCorrectly()
+        {
+            // Arrange - Create a test CSV file
+            string testCsvPath = Path.Combine(TestDirectory, "test.csv");
+            File.WriteAllText(testCsvPath, "old,new");
+
+            var args = new[] { "--bulk-file", testCsvPath, TestDirectory };
+            var parser = new CommandLineParser(args);
+
+            // Act
+            var result = parser.ParseArguments(out var options, out var filter, out var error);
+
+            // Assert
+            result.Should().BeTrue();
+            parser.GetRootDirectory().Should().Be(TestDirectory);
+        }
+
+        [Fact]
+        public void ParseArguments_WithBulkModeCsvBeforeDirectory_ShouldParseCorrectly()
+        {
+            // Arrange - Create a test CSV file
+            string testCsvPath = Path.Combine(TestDirectory, "test.csv");
+            File.WriteAllText(testCsvPath, "old,new");
+
+            var args = new[] { TestDirectory, "--bulk-file", testCsvPath };
+            var parser = new CommandLineParser(args);
+
+            // Act
+            var result = parser.ParseArguments(out var options, out var filter, out var error);
+
+            // Assert
+            result.Should().BeTrue();
+            parser.GetRootDirectory().Should().Be(TestDirectory);
+        }
+
+        [Fact]
+        public void ParseArguments_StandardModeShouldNotSetBulkMode()
+        {
+            var args = new[] { "search", "replace", TestDirectory };
+            var parser = new CommandLineParser(args);
+
+            // Act
+            var result = parser.ParseArguments(out var options, out var filter, out var error);
+
+            // Assert
+            result.Should().BeTrue();
+            parser.IsBulkMode.Should().BeFalse();
+            parser.BulkFilePath.Should().BeNull();
+        }
+
+        [Fact]
+        public void ParseArguments_BulkModeWithAllOptions_ShouldParseAllOptions()
+        {
+            // Arrange - Create a test CSV file
+            string testCsvPath = Path.Combine(TestDirectory, "test.csv");
+            File.WriteAllText(testCsvPath, "old,new");
+
+            var args = new[] { "-b", testCsvPath, TestDirectory, "-e", ".txt", "-f", "*test*", "-c", "-r",
+                               "-d", "--encoding", "utf8", "--include-hidden", "--max-depth", "3", "-v" };
+            var parser = new CommandLineParser(args);
+
+            // Act
+            var result = parser.ParseArguments(out var options, out var filter, out var error);
+
+            // Assert
+            result.Should().BeTrue();
+            parser.IsBulkMode.Should().BeTrue();
+
+            // Verify all options are set
+            filter.Extensions.Should().Contain(".txt");
+            filter.FileNamePattern.Should().Be("*test*");
+            options.CaseSensitive.Should().BeTrue();
+            options.IsRegex.Should().BeTrue();
+            options.IsDryRun.Should().BeTrue();
+            options.Encoding.Should().Be(FileEncoding.Utf8);
+            options.IncludeHidden.Should().BeTrue();
+            options.MaxDepth.Should().Be(3);
+            options.Verbose.Should().BeTrue();
+        }
     }
 }

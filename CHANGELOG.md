@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Bulk/Batch Mode**: Process multiple search/replace operations from a CSV file
+  - New `--bulk-file` / `-b` CLI flag for bulk mode
+  - CSV file format: `search,replacement` pairs (one per line)
+  - Support for quoted strings with commas: `"pattern, with, commas",replacement`
+  - Comment lines starting with `#` are ignored
+  - Empty lines are skipped
+  - Empty replacement values delete matched text
+  - Continue-on-error processing: all pairs are processed even if some fail
+  - Per-pair error reporting with line numbers
+  - Shared filter options: all pairs use the same file extensions and filters from command line
+
+#### New Models
+- **SearchReplacePair**: Represents a single search/replace pair with line number tracking
+- **BulkReplacementResult**: Aggregates results from multiple pairs with per-pair tracking
+- **PairReplacementResult**: Result for a single search/replace pair in a bulk operation
+
+#### New Services
+- **BulkFileProcessor**: Orchestrates bulk processing with continue-on-error logic
+- **CsvSearchReplaceParser**: Parses CSV files with support for quoted strings, comments, and empty lines
+
+#### New CLI Options
+- `--bulk-file <csv>` / `-b <csv>`: Enable bulk mode with CSV file containing search/replace pairs
+
+#### Enhanced Output
+- `PrintBulkHeader()`: Bulk mode header with CSV file path and pair count
+- `PrintBulkResults()`: Detailed results for each search/replace pair
+- `PrintBulkSummary()`: Summary statistics for bulk operations
+
+#### New Unit Tests
+- **SearchReplacePairTests**: 10 tests for pair model validation and string representation
+- **BulkReplacementResultTests**: 10 tests for bulk result aggregation
+- **CsvSearchReplaceParserTests**: 15 tests for CSV parsing (quotes, comments, edge cases)
+- **BulkFileProcessorTests**: 10 tests for bulk processing logic with error handling
+- **CommandLineParserTests**: 12 new tests for bulk mode argument parsing
+- **ResultFormatter**: 3 new methods for bulk mode output formatting
+
+### Changed
+- **Help System**: Updated to show both standard and bulk mode usage with examples
+- **Program.cs**: Refactored with `ProcessStandardMode()` and `ProcessBulkMode()` methods
+- **Test Coverage**: Increased from 124 to 183 tests (100% pass rate)
+
 ### Fixed
 - **FileHelper.FormatFileSize()**: Fixed locale-specific decimal separator issue
   - Now uses `CultureInfo.InvariantCulture` for consistent decimal separator
@@ -36,7 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Help now works with just `FolderTools.exe --help` without requiring positional arguments
 
 ### Test Results
-- **Passing**: 124 tests (100%)
+- **Passing**: 183 tests (100%)
 
 ### Planned Features
 - Linux/macOS support

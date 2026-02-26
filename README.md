@@ -2,7 +2,7 @@
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/yourusername/FolderTools)
 [![.NET](https://img.shields.io/badge/.NET-Framework%204.8.1-purple)](https://dotnet.microsoft.com/download/dotnet-framework)
-[![Tests](https://img.shields.io/badge/tests-122%20passed%20%7C%202%20failed-success)](https://github.com/yourusername/FolderTools)
+[![Tests](https://img.shields.io/badge/tests-183%20passed-success)](https://github.com/yourusername/FolderTools)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)](https://microsoft.com/windows)
 
@@ -38,6 +38,7 @@
 |---------|--------|-------------|
 | **Find & Replace** | ✅ Complete | Literal string replacement with case sensitivity toggle |
 | **Regex Support** | ✅ Complete | Full regular expression pattern matching |
+| **Bulk/Batch Mode** | ✅ Complete | Process multiple search/replace pairs from CSV file |
 | **Recursive Search** | ✅ Complete | Process nested directories with configurable depth |
 | **File Filtering** | ✅ Complete | Filter by extension, name pattern, file size |
 | **Dry-Run Mode** | ✅ Complete | Preview changes without modifying files |
@@ -48,12 +49,14 @@
 
 ### Advanced Features
 
+- **Bulk/Batch Mode**: Process multiple search/replace operations from a CSV file in a single run
 - **Hidden File Support**: Option to include/exclude hidden and system files
 - **Size Filtering**: Filter files by minimum/maximum size
 - **Wildcard Patterns**: Filename matching with `*` and `?` wildcards
 - **Verbose Logging**: Detailed output for debugging and confirmation
 - **Quiet Mode**: Minimal output for scripting
 - **Progress Tracking**: Summary statistics with files processed and replacements made
+- **Continue on Error**: Process all pairs even if some fail (bulk mode)
 
 ## Installation
 
@@ -80,22 +83,38 @@ Grab the latest executable from the [Releases](https://github.com/yourusername/F
 
 ### Basic Syntax
 
+#### Standard Mode (Single Operation)
 ```bash
 FolderTools.exe <search-pattern> <replace-pattern> <directory> [options]
 ```
 
+#### Bulk Mode (Multiple Operations)
+```bash
+FolderTools.exe --bulk-file <csv-file> <directory> [options]
+# or
+FolderTools.exe -b <csv-file> <directory> [options]
+```
+
 ### Required Arguments
 
+#### Standard Mode
 | Argument | Description |
 |----------|-------------|
 | `<search-pattern>` | Text or regex pattern to search for |
 | `<replace-pattern>` | Text to replace matches with (use `""` for empty) |
 | `<directory>` | Starting directory to search in |
 
+#### Bulk Mode
+| Argument | Description |
+|----------|-------------|
+| `--bulk-file <csv-file>` | CSV file containing search/replace pairs |
+| `<directory>` | Starting directory to search in |
+
 ### Options
 
 | Option | Short | Description |
 |--------|-------|-------------|
+| `--bulk-file <csv>` | `-b` | Bulk mode: CSV file with search/replace pairs |
 | `--extensions <exts>` | `-e` | File extensions to process (e.g., `.txt,.cs,.json`) |
 | `--filename <pattern>` | `-f` | Filename wildcard pattern (e.g., `*config*`) |
 | `--min-size <bytes>` | | Minimum file size |
@@ -176,6 +195,107 @@ See detailed information about each file:
 FolderTools.exe "oldValue" "newValue" "C:\MyProject" -v --dry-run
 ```
 
+## Bulk Mode (Batch Operations)
+
+Bulk mode allows you to perform multiple search/replace operations in a single run by specifying pairs in a CSV file.
+
+### CSV File Format
+
+Create a CSV file with search/replace pairs (one per line):
+
+```csv
+# Comment lines start with #
+old,new
+foo,bar
+"pattern, with, commas",replacement
+TODO,  (empty replacement deletes matched text)
+deprecated,supported
+```
+
+**CSV Format Rules:**
+- Each line: `search,replacement`
+- Use quotes for values containing commas: `"pattern, with, commas",replacement`
+- Lines starting with `#` are comments
+- Empty lines are ignored
+- Empty replacement deletes the matched text
+
+### Bulk Mode Examples
+
+#### Basic Bulk Replacement
+
+Create `replacements.csv`:
+```csv
+hello,hi
+world,earth
+foo,bar
+```
+
+Run bulk mode:
+```bash
+FolderTools.exe --bulk-file replacements.csv "C:\MyFolder" -e ".txt"
+```
+
+#### Bulk Mode with Dry-Run
+
+Preview all changes before applying:
+```bash
+FolderTools.exe -b replacements.csv "C:\MyFolder" --dry-run -v
+```
+
+#### Complex CSV with Commas and Comments
+
+Create `complex.csv`:
+```csv
+# Configuration file replacements
+localhost,production.example.com
+"127.0.0.1:8080","api.service.com:443"
+DEBUG,false
+TODO,  (empty replacement deletes TODO comments)
+```
+
+Run with options:
+```bash
+FolderTools.exe -b complex.csv "C:\MyProject" -e ".cs,.js,.json" -c -v
+```
+
+#### Bulk Mode with All Filters
+
+```bash
+FolderTools.exe --bulk-file pairs.csv "C:\Project" \
+  -e ".cs,.vb,.js" \
+  -f "*config*" \
+  --max-depth 3 \
+  --include-hidden \
+  --dry-run
+```
+
+### Bulk Mode Output
+
+```
+=== FolderTools - Bulk Find and Replace ===
+CSV file: replacements.csv
+Directory: C:\MyFolder
+Pairs to process: 3
+Mode: Live (files will be modified)
+
+--- Pair 1: "hello" -> "hi" ---
+  Files processed: 5
+  Replacements: 12
+
+--- Pair 2: "world" -> "earth" ---
+  Files processed: 5
+  Replacements: 8
+
+--- Pair 3: "foo" -> "bar" ---
+  Files processed: 5
+  Replacements: 3
+
+=== Bulk operation completed ===
+Pairs processed: 3 total, 3 successful, 0 failed
+Total files processed: 15
+Total replacements: 23
+```
+
 ## Testing
 
 ### Test Architecture
@@ -194,12 +314,17 @@ FolderTools uses a dependency injection pattern to enable comprehensive unit tes
 | SearchOptions | 5 | ✅ Pass | Model property initialization |
 | ReplacementResult | 8 | ✅ Pass | Result aggregation |
 | FileFilter | 10 | ✅ Pass | Pattern matching with filename-only support |
-| TextReplacer | 9 | ⚠️ 8/9 | Empty pattern edge case |
+| SearchReplacePair | 10 | ✅ Pass | Bulk mode pair model |
+| BulkReplacementResult | 10 | ✅ Pass | Bulk mode result aggregation |
+| TextReplacer | 9 | ✅ Pass | Text replacement with edge cases |
 | FileProcessor | 5 | ✅ Pass | File system integration working |
-| CommandLineParser | 18 | ✅ Pass | Argument parsing fully fixed |
-| FileHelper | 12 | ⚠️ 11/12 | Size formatting locale variance |
+| BulkFileProcessor | 10 | ✅ Pass | Bulk processing with continue-on-error |
+| CommandLineParser | 30 | ✅ Pass | Standard + bulk mode argument parsing |
+| CsvSearchReplaceParser | 15 | ✅ Pass | CSV parsing with quotes/comments |
+| FileHelper | 12 | ✅ Pass | File operations and utilities |
 | EncodingHelper | 10 | ✅ Pass | Encoding detection |
-| ResultFormatter | 12 | ✅ Pass | Console output capture |
+| ResultFormatter | 15 | ✅ Pass | Standard + bulk mode output |
+| **Total** | **183** | **✅ 100%** | **All tests passing** |
 
 ### Writing New Tests
 
@@ -257,11 +382,12 @@ Test fixtures are located in `FolderTools.Tests/TestData/`:
 | Core Engine | ✅ Complete | 100% |
 | File Filtering | ✅ Complete | 100% |
 | Regex Support | ✅ Complete | 100% |
+| Bulk/Batch Mode | ✅ Complete | 100% |
 | Encoding Detection | ✅ Complete | 100% |
 | Binary Detection | ✅ Complete | 100% |
 | CLI Parser | ✅ Complete | 100% |
 | Error Handling | ✅ Complete | 100% |
-| Unit Tests | ✅ Complete | 98% (122/124 passing) |
+| Unit Tests | ✅ Complete | 100% (183/183 passing) |
 | Documentation | ✅ Complete | 100% |
 | CI/CD Pipeline | 🔄 Planned | 0% |
 
@@ -275,12 +401,12 @@ Test fixtures are located in `FolderTools.Tests/TestData/`:
 
 ### Upcoming Features (Roadmap)
 
-- [ ] Configuration file support for complex replacements
 - [ ] Backup creation before modifications
 - [ ] Undo functionality
 - [ ] Unicode normalization options
 - [ ] Performance improvements for large file sets
 - [ ] Multi-threading for parallel processing
+- [ ] Configuration file support (JSON/YAML) as alternative to CSV
 
 ## Contributing
 
@@ -310,8 +436,8 @@ dotnet run --project FolderTools/FolderTools.csproj -- "search" "replace" "."
 
 The project includes comprehensive unit tests using **xUnit**, **Moq**, and **FluentAssertions**:
 
-- **Total Tests**: 124
-- **Passing**: 122 (98%)
+- **Total Tests**: 183
+- **Passing**: 183 (100%)
 - **Test Framework**: xUnit 2.7+
 - **Mocking**: Moq 4.20+
 - **Assertions**: FluentAssertions 6.12+
@@ -348,27 +474,44 @@ FolderTools/
 │   ├── Models/                     # Data models
 │   │   ├── SearchOptions.cs
 │   │   ├── ReplacementResult.cs
-│   │   └── FileFilter.cs
+│   │   ├── FileFilter.cs
+│   │   ├── SearchReplacePair.cs    # Bulk mode pair model
+│   │   └── BulkReplacementResult.cs # Bulk mode result model
 │   ├── Services/                   # Business logic
 │   │   ├── IFileProcessor.cs       # File processor interface
 │   │   ├── IFileHelper.cs          # File helper interface (for DI)
 │   │   ├── FileProcessor.cs        # Main processing logic
+│   │   ├── BulkFileProcessor.cs    # Bulk mode processing logic
 │   │   ├── ITextReplacer.cs        # Text replacer interface
 │   │   └── TextReplacer.cs         # Text replacement logic
 │   ├── Utilities/                  # Helper classes
 │   │   ├── FileHelper.cs           # Static file utilities
 │   │   ├── FileHelperWrapper.cs    # Wrapper for IFileHelper
 │   │   ├── EncodingHelper.cs       # Encoding detection
-│   │   └── CommandLineParser.cs    # CLI argument parser
+│   │   ├── CommandLineParser.cs    # CLI argument parser
+│   │   └── CsvSearchReplaceParser.cs # CSV file parser for bulk mode
 │   ├── Outputs/                    # Output formatting
 │   │   └── ResultFormatter.cs      # Console output formatter
 │   └── Program.cs                  # Entry point
 │
 └── FolderTools.Tests/              # Unit test project
     ├── Models/                     # Model tests
+    │   ├── SearchOptionsTests.cs
+    │   ├── ReplacementResultTests.cs
+    │   ├── FileFilterTests.cs
+    │   ├── SearchReplacePairTests.cs
+    │   └── BulkReplacementResultTests.cs
     ├── Services/                   # Service tests (with mocking)
+    │   ├── FileProcessorTests.cs
+    │   ├── BulkFileProcessorTests.cs
+    │   └── TextReplacerTests.cs
     ├── Utilities/                  # Utility tests
+    │   ├── CommandLineParserTests.cs
+    │   ├── CsvSearchReplaceParserTests.cs
+    │   ├── FileHelperTests.cs
+    │   └── EncodingHelperTests.cs
     ├── Outputs/                    # Output tests
+    │   └── ResultFormatterTests.cs
     └── TestData/                   # Test fixtures and files
 ```
 
