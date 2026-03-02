@@ -7,7 +7,20 @@ namespace FolderTools.Utilities
 {
     /// <summary>
     /// Detects collisions in bulk search/replace operations where replacement values
-    /// from one pair become search patterns in subsequent pairs
+    /// from one pair become search patterns in subsequent pairs.
+    ///
+    /// Collisions are detected based on SEQUENTIAL ORDER: a collision occurs only when
+    /// a pair at line X produces a replacement value that is searched for by a pair
+    /// at line Y (where Y > X). This mirrors the actual behavior of BulkFileProcessor,
+    /// which processes pairs sequentially and never revisits previous lines.
+    ///
+    /// Example of a collision:
+    ///   Line 10: V111 → V112 (produces V112)
+    ///   Line 15: V112 → V11A (searches for V112) ← COLLISION!
+    ///
+    /// Example of NOT a collision:
+    ///   Line 14: V112 → V11A (produces V11A)
+    ///   Line 15: V111 → V112 (produces V112) ← No collision (V112 not searched for later)
     /// </summary>
     public class BulkCollisionValidator
     {
@@ -17,7 +30,8 @@ namespace FolderTools.Utilities
         private const int MaxChainLength = 100;
 
         /// <summary>
-        /// Detects collisions in a list of search/replace pairs
+        /// Detects collisions in a list of search/replace pairs based on sequential processing order.
+        /// Only detects collisions where a replacement value is searched for in a LATER line.
         /// </summary>
         /// <param name="pairs">The list of search/replace pairs to check</param>
         /// <returns>A CollisionDetectionResult containing all detected collisions</returns>
@@ -69,17 +83,28 @@ namespace FolderTools.Utilities
                 // Check if this replacement exists as a search pattern
                 if (searchPatternToPairs.ContainsKey(replacement))
                 {
-                    // Found a collision - build the chain
-                    var chain = BuildChain(pair, searchPatternToPairs);
+                    var potentialMatches = searchPatternToPairs[replacement];
 
-                    if (chain.Count > 1)
+                    // Filter to only pairs that come AFTER current line
+                    var forwardMatches = potentialMatches
+                        .Where(p => p.LineNumber > pair.LineNumber)
+                        .OrderBy(p => p.LineNumber)
+                        .ToList();
+
+                    if (forwardMatches.Count > 0)
                     {
-                        // Create a unique key for this chain to avoid duplicates
-                        string chainKey = GetChainKey(chain);
-                        if (!processedChains.Contains(chainKey))
+                        // Build chain starting from the earliest forward match
+                        var chain = BuildChain(pair, forwardMatches[0], searchPatternToPairs);
+
+                        if (chain.Count > 1)
                         {
-                            processedChains.Add(chainKey);
-                            allChains.Add(chain);
+                            // Create a unique key for this chain to avoid duplicates
+                            string chainKey = GetChainKey(chain);
+                            if (!processedChains.Contains(chainKey))
+                            {
+                                processedChains.Add(chainKey);
+                                allChains.Add(chain);
+                            }
                         }
                     }
                 }
@@ -97,46 +122,46 @@ namespace FolderTools.Utilities
         }
 
         /// <summary>
-        /// Builds a chain starting from a given pair by following replacement links
+        /// Builds a chain starting from a given pair by following replacement links in forward order only.
+        /// Only includes pairs that come after the current pair in the CSV line order.
         /// </summary>
         /// <param name="startPair">The pair to start from</param>
+        /// <param name="nextPair">The next pair in the chain (must have LineNumber > startPair.LineNumber)</param>
         /// <param name="searchPatternToPairs">Dictionary mapping search patterns to pairs</param>
-        /// <returns>The chain of pairs involved in the collision</returns>
+        /// <returns>The chain of pairs involved in the collision, in sequential order</returns>
         private List<SearchReplacePair> BuildChain(
             SearchReplacePair startPair,
+            SearchReplacePair nextPair,
             Dictionary<string, List<SearchReplacePair>> searchPatternToPairs)
         {
             var chain = new List<SearchReplacePair>();
             var visited = new HashSet<string>();
-            string currentReplacement = startPair.Replacement;
 
             chain.Add(startPair);
             visited.Add(startPair.SearchPattern);
 
-            int safetyCounter = 0;
-            while (!string.IsNullOrEmpty(currentReplacement) &&
-                   searchPatternToPairs.ContainsKey(currentReplacement) &&
-                   safetyCounter < MaxChainLength)
+            SearchReplacePair currentPair = nextPair;
+
+            while (currentPair != null && !visited.Contains(currentPair.SearchPattern))
             {
-                safetyCounter++;
+                visited.Add(currentPair.SearchPattern);
+                chain.Add(currentPair);
 
-                // Skip if we've already seen this pattern (circular reference)
-                if (visited.Contains(currentReplacement))
-                    break;
+                string currentReplacement = currentPair.Replacement;
 
-                visited.Add(currentReplacement);
-
-                // Get the first pair that matches this search pattern
-                var nextPairs = searchPatternToPairs[currentReplacement];
-                if (nextPairs.Count > 0)
+                // Find next pair that comes AFTER current pair
+                if (searchPatternToPairs.ContainsKey(currentReplacement))
                 {
-                    var nextPair = nextPairs[0];
-                    chain.Add(nextPair);
-                    currentReplacement = nextPair.Replacement;
+                    var nextCandidates = searchPatternToPairs[currentReplacement]
+                        .Where(p => p.LineNumber > currentPair.LineNumber)
+                        .OrderBy(p => p.LineNumber)
+                        .ToList();
+
+                    currentPair = nextCandidates.Count > 0 ? nextCandidates[0] : null;
                 }
                 else
                 {
-                    break;
+                    currentPair = null;
                 }
             }
 

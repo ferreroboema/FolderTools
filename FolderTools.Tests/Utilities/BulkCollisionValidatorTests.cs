@@ -261,5 +261,40 @@ namespace FolderTools.Tests.Utilities
             // Assert
             message.Should().Contain("1 collision");
         }
+
+        [Fact]
+        public void DetectCollisions_WithForwardOrderOnly_ShouldDetect()
+        {
+            // Line 10: A → B
+            // Line 15: B → C
+            // This IS a collision (A produces B, then B replaces that B)
+            var pairs = new List<SearchReplacePair>
+            {
+                new SearchReplacePair("A", "B", 10),
+                new SearchReplacePair("B", "C", 15)
+            };
+
+            var result = _validator.DetectCollisions(pairs);
+
+            Assert.True(result.HasCollisions);
+            Assert.Equal(1, result.CollisionCount);
+        }
+
+        [Fact]
+        public void DetectCollisions_WithBackwardOrderOnly_ShouldNotDetect()
+        {
+            // Line 10: B → C (runs first, searches for B)
+            // Line 15: A → B (runs second, produces B)
+            // This is NOT a collision because Line 10 runs before Line 15 produces B
+            var pairs = new List<SearchReplacePair>
+            {
+                new SearchReplacePair("B", "C", 10),
+                new SearchReplacePair("A", "B", 15)
+            };
+
+            var result = _validator.DetectCollisions(pairs);
+
+            Assert.False(result.HasCollisions);
+        }
     }
 }
