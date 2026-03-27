@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using FolderTools.Models;
 using FolderTools.Services;
 using FolderTools.Utilities;
@@ -27,6 +28,13 @@ namespace FolderTools
                     return 0;
                 }
 
+                if (error == "VERSION")
+                {
+                    var version = Assembly.GetExecutingAssembly().GetName().Version;
+                    Console.WriteLine($"FolderTools v{version}");
+                    return 0;
+                }
+
                 Console.Error.WriteLine($"Error: {error}");
                 Console.WriteLine();
                 CommandLineParser.PrintHelp();
@@ -35,6 +43,18 @@ namespace FolderTools
 
             // Get the root directory
             string rootDirectory = parser.GetRootDirectory();
+
+            // If using current directory (default), prompt for confirmation
+            if (rootDirectory == ".")
+            {
+                string currentDir = System.IO.Directory.GetCurrentDirectory();
+                Console.WriteLine($"No directory specified. Current directory: {currentDir}");
+                if (!PromptYesNo("Proceed with current directory?"))
+                {
+                    Console.WriteLine("Operation cancelled by user.");
+                    return 0;
+                }
+            }
 
             // Normalize the directory path
             try
@@ -166,7 +186,7 @@ namespace FolderTools
                     default:
                         formatter.PrintWarning($"Collisions detected: {collisionResult.GetSummaryMessage()}");
                         formatter.PrintCollisionWarnings(collisionResult);
-                        shouldContinue = PromptUserToContinue();
+                        shouldContinue = PromptYesNo("Do you want to continue?");
                         break;
                 }
 
@@ -214,15 +234,14 @@ namespace FolderTools
         }
 
         /// <summary>
-        /// Prompts the user to continue when collisions are detected
+        /// Prompts the user with a yes/no question, defaulting to yes
         /// </summary>
-        /// <returns>True if user wants to continue, false otherwise</returns>
-        private static bool PromptUserToContinue()
+        /// <param name="message">The message to display before the prompt</param>
+        /// <returns>True if user wants to proceed (Y/yes/Enter), false otherwise</returns>
+        private static bool PromptYesNo(string message)
         {
-            Console.Write("Do you want to continue? (Y/n): ");
+            Console.Write($"{message} (Y/n): ");
             string response = Console.ReadLine()?.Trim().ToLower();
-
-            // Default to yes if user just presses Enter
             return string.IsNullOrEmpty(response) || response == "y" || response == "yes";
         }
     }
