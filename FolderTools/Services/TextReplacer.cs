@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using System.Text.RegularExpressions;
 using FolderTools.Models;
 using FolderTools.Utilities;
@@ -175,22 +176,34 @@ namespace FolderTools.Services
         }
 
         /// <summary>
-        /// Replaces all occurrences of a pattern with replacement, ignoring case
+        /// Replaces all occurrences of a pattern with replacement, ignoring case.
+        /// Uses manual IndexOf loop to ensure the replacement string is treated as a literal
+        /// (regex-based approach would interpret $1, $2 etc. as backreferences).
         /// </summary>
         private string ReplaceAllIgnoreCase(string content, string pattern, string replacement)
         {
-            // Use regex for case-insensitive replacement
-            try
-            {
-                // Escape the pattern for regex if it contains special characters
-                string escapedPattern = Regex.Escape(pattern);
-                return Regex.Replace(content, escapedPattern, replacement, RegexOptions.IgnoreCase);
-            }
-            catch
-            {
-                // Fallback to simple replace if regex fails
+            if (string.IsNullOrEmpty(content) || string.IsNullOrEmpty(pattern))
                 return content;
+
+            var sb = new StringBuilder(content.Length);
+            int index = 0;
+            int patternLength = pattern.Length;
+
+            while (index < content.Length)
+            {
+                int matchIndex = content.IndexOf(pattern, index, StringComparison.OrdinalIgnoreCase);
+                if (matchIndex == -1)
+                {
+                    sb.Append(content, index, content.Length - index);
+                    break;
+                }
+
+                sb.Append(content, index, matchIndex - index);
+                sb.Append(replacement);
+                index = matchIndex + patternLength;
             }
+
+            return sb.ToString();
         }
     }
 }

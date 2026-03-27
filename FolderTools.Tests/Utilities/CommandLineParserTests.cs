@@ -31,12 +31,23 @@ namespace FolderTools.Tests.Utilities
         [Fact]
         public void ParseArguments_WithInsufficientArguments_ShouldReturnError()
         {
-            var args = new[] { "search", "replace" };
+            var args = new[] { "search" };
             var parser = new CommandLineParser(args);
             var result = parser.ParseArguments(out var options, out var filter, out var error);
 
             result.Should().BeFalse();
             error.Should().Contain("Insufficient arguments");
+        }
+
+        [Fact]
+        public void ParseArguments_WithoutDirectory_ShouldDefaultToCurrentDirectory()
+        {
+            var args = new[] { "search", "replace" };
+            var parser = new CommandLineParser(args);
+            var result = parser.ParseArguments(out var options, out var filter, out var error);
+
+            result.Should().BeTrue();
+            parser.GetRootDirectory().Should().Be(".");
         }
 
         [Fact]
@@ -213,21 +224,22 @@ namespace FolderTools.Tests.Utilities
         [Fact]
         public void GetRootDirectory_ShouldReturnCorrectDirectory()
         {
-            var args = new[] { "search", "replace", "C:\\TestDir" };
+            var args = new[] { "search", "replace", TestDirectory };
             var parser = new CommandLineParser(args);
+            parser.ParseArguments(out var options, out var filter, out var error);
             var rootDir = parser.GetRootDirectory();
 
-            rootDir.Should().Be("C:\\TestDir");
+            rootDir.Should().Be(TestDirectory);
         }
 
         [Fact]
-        public void GetRootDirectory_WithInsufficientArgs_ShouldReturnNull()
+        public void GetRootDirectory_WithInsufficientArgs_ShouldDefaultToCurrentDirectory()
         {
             var args = new[] { "search" };
             var parser = new CommandLineParser(args);
             var rootDir = parser.GetRootDirectory();
 
-            rootDir.Should().BeNull();
+            rootDir.Should().Be(".");
         }
 
         // Bulk mode tests

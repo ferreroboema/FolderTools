@@ -47,13 +47,18 @@ namespace FolderTools.Utilities
 
             try
             {
-                // Check for help flag first (before validating argument count)
+                // Check for help/version flags first (before validating argument count)
                 if (_args.Count > 0)
                 {
                     string firstArg = _args[0].ToLower();
                     if (firstArg == "-h" || firstArg == "--help")
                     {
                         error = "HELP";
+                        return false;
+                    }
+                    if (firstArg == "-V" || firstArg == "--version")
+                    {
+                        error = "VERSION";
                         return false;
                     }
                 }
@@ -77,151 +82,56 @@ namespace FolderTools.Utilities
                 }
 
                 // Parse standard mode positional arguments
-                if (_args.Count < 3)
+                if (_args.Count < 2)
                 {
-                    error = "Insufficient arguments. Required: <search-pattern> <replace-pattern> <directory>";
+                    error = "Insufficient arguments. Required: <search-pattern> <replace-pattern> [<directory>]";
                     return false;
                 }
 
                 options.Pattern = _args[0];
                 options.Replacement = _args[1];
-                string directory = _args[2];
-                _currentIndex = 3;
 
-                // Validate directory exists
-                if (!System.IO.Directory.Exists(directory))
+                // Check if directory is provided (third argument must not start with "-" to be a directory)
+                string directory;
+                if (_args.Count >= 3 && !_args[2].StartsWith("-"))
+                {
+                    directory = _args[2];
+                    _currentIndex = 3;
+                }
+                else
+                {
+                    directory = ".";  // Default to current directory
+                    _currentIndex = 2;
+                }
+
+                // Only validate if directory is not "." (current directory always exists)
+                if (directory != "." && !System.IO.Directory.Exists(directory))
                 {
                     error = $"Directory not found: {directory}";
                     return false;
                 }
 
+                // Store root directory for consistent retrieval via GetRootDirectory()
+                _rootDirectory = directory;
+
                 // Store root directory in options for later use
                 options.Verbose = false;
                 filter.IncludeHidden = false;
 
-                // Parse optional arguments
+                // Parse optional arguments using shared method
                 while (_currentIndex < _args.Count)
                 {
-                    string arg = _args[_currentIndex];
-
-                    switch (arg.ToLower())
+                    int beforeIndex = _currentIndex;
+                    if (!ParseOptionalArgument(_args[_currentIndex], options, filter, out error))
                     {
-                        case "-e":
-                        case "--extensions":
-                            if (!HasNextArg())
-                            {
-                                error = $"Missing value for {arg}";
-                                return false;
-                            }
-                            filter.AddExtensions(GetNextArg());
-                            _currentIndex++;
-                            break;
+                        return false;
+                    }
 
-                        case "-f":
-                        case "--filename":
-                            if (!HasNextArg())
-                            {
-                                error = $"Missing value for {arg}";
-                                return false;
-                            }
-                            filter.FileNamePattern = GetNextArg();
-                            _currentIndex++;
-                            break;
-
-                        case "--min-size":
-                            if (!HasNextArg() || !long.TryParse(GetNextArg(), out long minSize))
-                            {
-                                error = $"Invalid value for {arg}";
-                                return false;
-                            }
-                            filter.MinSize = minSize;
-                            _currentIndex++;
-                            break;
-
-                        case "--max-size":
-                            if (!HasNextArg() || !long.TryParse(GetNextArg(), out long maxSize))
-                            {
-                                error = $"Invalid value for {arg}";
-                                return false;
-                            }
-                            filter.MaxSize = maxSize;
-                            _currentIndex++;
-                            break;
-
-                        case "-c":
-                        case "--case-sensitive":
-                            options.CaseSensitive = true;
-                            _currentIndex++;
-                            break;
-
-                        case "-r":
-                        case "--regex":
-                            options.IsRegex = true;
-                            _currentIndex++;
-                            break;
-
-                        case "-d":
-                        case "--dry-run":
-                            options.IsDryRun = true;
-                            _currentIndex++;
-                            break;
-
-                        case "--encoding":
-                            if (!HasNextArg() || !ParseEncoding(GetNextArg(), out FileEncoding encoding))
-                            {
-                                error = $"Invalid encoding value. Valid values: auto, utf8, ascii, unicode";
-                                return false;
-                            }
-                            options.Encoding = encoding;
-                            _currentIndex++;
-                            break;
-
-                        case "--include-hidden":
-                            options.IncludeHidden = true;
-                            filter.IncludeHidden = true;
-                            _currentIndex++;
-                            break;
-
-                        case "--max-depth":
-                            if (!HasNextArg() || !int.TryParse(GetNextArg(), out int maxDepth) || maxDepth < 0)
-                            {
-                                error = $"Invalid value for {arg}. Must be a non-negative integer.";
-                                return false;
-                            }
-                            options.MaxDepth = maxDepth;
-                            _currentIndex++;
-                            break;
-
-                        case "-v":
-                        case "--verbose":
-                            options.Verbose = true;
-                            _currentIndex++;
-                            break;
-
-                        case "-q":
-                        case "--quiet":
-                            options.Quiet = true;
-                            _currentIndex++;
-                            break;
-
-                        case "--collision-behavior":
-                            if (!HasNextArg() || !ParseCollisionBehavior(GetNextArg(), out CollisionBehavior behavior))
-                            {
-                                error = $"Invalid value for {arg}. Valid values: prompt, warn, fail, ignore";
-                                return false;
-                            }
-                            options.CollisionBehavior = behavior;
-                            _currentIndex++;
-                            break;
-
-                        case "-h":
-                        case "--help":
-                            error = "HELP";
-                            return false;
-
-                        default:
-                            error = $"Unknown argument: {arg}";
-                            return false;
+                    // Only increment if ParseOptionalArgument didn't increment
+                    // (it increments for arguments with values)
+                    if (_currentIndex == beforeIndex)
+                    {
+                        _currentIndex++;
                     }
                 }
 
@@ -313,8 +223,7 @@ namespace FolderTools.Utilities
 
                 if (string.IsNullOrEmpty(directory))
                 {
-                    error = "Directory not found or not specified. In bulk mode, provide: --bulk-file <csv> <directory>";
-                    return false;
+                    directory = ".";  // Default to current directory
                 }
 
                 // Store root directory for retrieval
@@ -478,6 +387,11 @@ namespace FolderTools.Utilities
                     _currentIndex++;
                     break;
 
+                case "-V":
+                case "--version":
+                    error = "VERSION";
+                    return false;
+
                 case "-h":
                 case "--help":
                     error = "HELP";
@@ -499,16 +413,7 @@ namespace FolderTools.Utilities
         /// <returns>Root directory path</returns>
         public string GetRootDirectory()
         {
-            if (IsBulkMode)
-            {
-                return _rootDirectory;
-            }
-
-            if (_args.Count >= 3)
-            {
-                return _args[2];
-            }
-            return null;
+            return _rootDirectory ?? ".";
         }
 
         private bool HasNextArg()
@@ -575,17 +480,18 @@ namespace FolderTools.Utilities
             Console.WriteLine("FolderTools - CLI Find and Replace Tool");
             Console.WriteLine();
             Console.WriteLine("Usage:");
-            Console.WriteLine("  Standard mode: FolderTools.exe <search-pattern> <replace-pattern> <directory> [options]");
-            Console.WriteLine("  Bulk mode:     FolderTools.exe --bulk-file <csv> <directory> [options]");
+            Console.WriteLine("  Standard mode: FolderTools.exe <search-pattern> <replace-pattern> [<directory>] [options]");
+            Console.WriteLine("  Bulk mode:     FolderTools.exe --bulk-file <csv> [<directory>] [options]");
+            Console.WriteLine("                  (If directory is omitted, current directory is used after prompt)");
             Console.WriteLine();
             Console.WriteLine("Standard mode - Required arguments:");
             Console.WriteLine("  <search-pattern>    Text or regex pattern to search for");
             Console.WriteLine("  <replace-pattern>   Text to replace matches with (use \"\" for empty)");
-            Console.WriteLine("  <directory>         Starting directory to search in");
+            Console.WriteLine("  <directory>         Starting directory to search in (optional, defaults to current)");
             Console.WriteLine();
             Console.WriteLine("Bulk mode - Required arguments:");
             Console.WriteLine("  -b, --bulk-file <csv>            CSV file with search/replace pairs (format: search,replace)");
-            Console.WriteLine("  <directory>                       Starting directory to search in");
+            Console.WriteLine("  <directory>                       Starting directory to search in (optional, defaults to current)");
             Console.WriteLine();
             Console.WriteLine("Options (both modes):");
             Console.WriteLine("  -e, --extensions <ext1,ext2>    File extensions to process (e.g., \".txt,.cs\")");
@@ -602,6 +508,7 @@ namespace FolderTools.Utilities
             Console.WriteLine("                                   Modes: prompt, warn, fail, ignore");
             Console.WriteLine("  -v, --verbose                    Verbose output");
             Console.WriteLine("  -q, --quiet                      Quiet mode (minimal output)");
+            Console.WriteLine("  -V, --version                    Show version information");
             Console.WriteLine("  -h, --help                       Show this help message");
             Console.WriteLine();
             Console.WriteLine("Standard mode examples:");
