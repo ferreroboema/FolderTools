@@ -445,16 +445,25 @@ bool IsTextFile(string filePath)
 
 ### Case-Insensitive Replacement
 
-For case-insensitive literal replacement, a regex is constructed:
+For case-insensitive literal replacement, a manual `IndexOf`/`StringBuilder` loop is used to ensure the replacement string is treated as literal text (not as a regex replacement pattern):
 
 ```csharp
-// Escape special regex characters in pattern
-string escapedPattern = Regex.Escape(pattern);
+// Manual loop ensures $ in replacement is treated literally
+var sb = new StringBuilder(content.Length);
+int index = 0;
 
-// Use regex with IgnoreCase option
-string result = Regex.Replace(content, escapedPattern,
-                              replacement,
-                              RegexOptions.IgnoreCase);
+while (index < content.Length)
+{
+    int matchIndex = content.IndexOf(pattern, index, StringComparison.OrdinalIgnoreCase);
+    if (matchIndex == -1)
+    {
+        sb.Append(content, index, content.Length - index);
+        break;
+    }
+    sb.Append(content, index, matchIndex - index);
+    sb.Append(replacement);
+    index = matchIndex + pattern.Length;
+}
 ```
 
 ### Counting Matches
@@ -602,10 +611,10 @@ dotnet test FolderTools.Tests/FolderTools.Tests.csproj --collect:"XPlat Code Cov
 | Component | Tests | Coverage |
 |-----------|-------|----------|
 | Models | 23 | High |
-| Services | 14 | Medium-High |
-| Utilities | 40 | Medium |
+| Services | 16 | Medium-High |
+| Utilities | 42 | Medium |
 | Outputs | 12 | High |
-| **Total** | **124** | **100% passing** |
+| **Total** | **202** | **100% passing** |
 
 ### Integration Tests
 
@@ -725,6 +734,9 @@ FolderTools.exe "search" "replace" "dir" --dry-run --verbose
 # Short form
 FolderTools.exe "search" "replace" "dir" -d -v
 
+# Without directory (uses current directory with prompt)
+FolderTools.exe "search" "replace" -d -v
+
 # Combined
 FolderTools.exe "search" "replace" "dir" -dv
 ```
@@ -733,9 +745,8 @@ FolderTools.exe "search" "replace" "dir" -dv
 
 | Code | Meaning |
 |------|---------|
-| 0 | Success (no errors) |
-| 1 | One or more files had errors |
-| 2 | Invalid command-line arguments |
+| 0 | Success (no errors, or user cancelled at prompt) |
+| 1 | Error (invalid arguments, processing errors, or bulk mode failures) |
 
 ---
 

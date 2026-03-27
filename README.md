@@ -2,7 +2,7 @@
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/ferreroboema/FolderTools)
 [![.NET](https://img.shields.io/badge/.NET-Framework%204.8.1-purple)](https://dotnet.microsoft.com/download/dotnet-framework)
-[![Tests](https://img.shields.io/badge/tests-197%20passed-success)](https://github.com/ferreroboema/FolderTools)
+[![Tests](https://img.shields.io/badge/tests-202%20passed-success)](https://github.com/ferreroboema/FolderTools)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)](https://microsoft.com/windows)
 
@@ -158,14 +158,14 @@ irm https://raw.githubusercontent.com/ferreroboema/FolderTools/main/uninstall.ps
 
 #### Standard Mode (Single Operation)
 ```bash
-FolderTools <search-pattern> <replace-pattern> <directory> [options]
+FolderTools <search-pattern> <replace-pattern> [<directory>] [options]
 ```
 
 #### Bulk Mode (Multiple Operations)
 ```bash
-FolderTools --bulk-file <csv-file> <directory> [options]
+FolderTools --bulk-file <csv-file> [<directory>] [options]
 # or
-FolderTools -b <csv-file> <directory> [options]
+FolderTools -b <csv-file> [<directory>] [options]
 ```
 
 ### Required Arguments
@@ -175,13 +175,13 @@ FolderTools -b <csv-file> <directory> [options]
 |----------|-------------|
 | `<search-pattern>` | Text or regex pattern to search for |
 | `<replace-pattern>` | Text to replace matches with (use `""` for empty) |
-| `<directory>` | Starting directory to search in |
+| `[<directory>]` | Starting directory (optional, defaults to current directory with confirmation) |
 
 #### Bulk Mode
 | Argument | Description |
 |----------|-------------|
 | `--bulk-file <csv-file>` | CSV file containing search/replace pairs |
-| `<directory>` | Starting directory to search in |
+| `[<directory>]` | Starting directory (optional, defaults to current directory with confirmation) |
 
 ### Options
 
@@ -201,6 +201,7 @@ FolderTools -b <csv-file> <directory> [options]
 | `--collision-behavior <mode>` | | How to handle bulk collisions: `prompt`, `warn`, `fail`, `ignore` |
 | `--verbose` | `-v` | Verbose output with per-file details |
 | `--quiet` | `-q` | Quiet mode (minimal output) |
+| `--version` | `-V` | Show version information |
 | `--help` | `-h` | Show help message |
 
 ## Examples
@@ -462,16 +463,16 @@ FolderTools uses a dependency injection pattern to enable comprehensive unit tes
 | FileFilter | 10 | ✅ Pass | Pattern matching with filename-only support |
 | SearchReplacePair | 10 | ✅ Pass | Bulk mode pair model |
 | BulkReplacementResult | 10 | ✅ Pass | Bulk mode result aggregation |
-| TextReplacer | 9 | ✅ Pass | Text replacement with edge cases |
+| TextReplacer | 11 | ✅ Pass | Text replacement with edge cases |
 | FileProcessor | 5 | ✅ Pass | File system integration working |
 | BulkFileProcessor | 10 | ✅ Pass | Bulk processing with continue-on-error |
-| CommandLineParser | 30 | ✅ Pass | Standard + bulk mode argument parsing |
+| CommandLineParser | 32 | ✅ Pass | Standard + bulk mode argument parsing |
 | CsvSearchReplaceParser | 15 | ✅ Pass | CSV parsing with quotes/comments |
 | FileHelper | 12 | ✅ Pass | File operations and utilities |
 | EncodingHelper | 10 | ✅ Pass | Encoding detection |
 | ResultFormatter | 15 | ✅ Pass | Standard + bulk mode output |
 | BulkCollisionValidator | 14 | ✅ Pass | Collision detection algorithm |
-| **Total** | **197** | **✅ 100%** | **All tests passing** |
+| **Total** | **202** | **✅ 100%** | **All tests passing** |
 
 ### Writing New Tests
 
@@ -534,7 +535,7 @@ Test fixtures are located in `FolderTools.Tests/TestData/`:
 | Binary Detection | ✅ Complete | 100% |
 | CLI Parser | ✅ Complete | 100% |
 | Error Handling | ✅ Complete | 100% |
-| Unit Tests | ✅ Complete | 100% (197/197 passing) |
+| Unit Tests | ✅ Complete | 100% (202/202 passing) |
 | Documentation | ✅ Complete | 100% |
 | CI/CD Pipeline | 🔄 Planned | 0% |
 
@@ -583,8 +584,8 @@ dotnet run --project FolderTools/FolderTools.csproj -- "search" "replace" "."
 
 The project includes comprehensive unit tests using **xUnit**, **Moq**, and **FluentAssertions**:
 
-- **Total Tests**: 197
-- **Passing**: 197 (100%)
+- **Total Tests**: 202
+- **Passing**: 202 (100%)
 - **Test Framework**: xUnit 2.7+
 - **Mocking**: Moq 4.20+
 - **Assertions**: FluentAssertions 6.12+
