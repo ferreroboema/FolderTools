@@ -78,7 +78,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Help System**: Updated to show both standard and bulk mode usage with examples
 - **Program.cs**: Refactored with `ProcessStandardMode()` and `ProcessBulkMode()` methods
-- **Test Coverage**: Increased from 124 to 183 tests (100% pass rate)
+- **Test Coverage**: Increased from 124 to 202 tests (100% pass rate)
+
+### Changed (recent)
+- **Directory argument is now optional**: Both standard and bulk mode default to current directory when omitted, with a user confirmation prompt
+- **CommandLineParser**: Deduplicated optional argument parsing - standard and bulk modes now share a single `ParseOptionalArgument()` method
+- **Program.cs**: Consolidated `PromptUserToContinue()` and `PromptUserForCurrentDirectory()` into a single `PromptYesNo()` helper
+- **CommandLineParser**: `_rootDirectory` now stored consistently in both standard and bulk mode paths
+- **Help text**: Updated to show `<directory>` as optional `[<directory>]` in both modes
+
+### Fixed (recent)
+- **TextReplacer.ReplaceAllIgnoreCase()**: Fixed critical bug where `$` characters in replacement strings were interpreted as regex backreferences in case-insensitive literal mode, causing silent data corruption
+  - Replaced regex-based approach with manual `IndexOf`/`StringBuilder` loop for literal replacement
+  - `$` in replacement strings is now always treated as a literal character
+
+### Added (recent)
+- **`--version` / `-V` flag**: Display the tool version information
+- **Current directory prompt**: When no directory is specified, prompts the user to confirm before using the current directory
 
 ### Fixed
 - **FileHelper.FormatFileSize()**: Fixed locale-specific decimal separator issue
@@ -109,7 +125,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Help now works with just `FolderTools.exe --help` without requiring positional arguments
 
 ### Test Results
-- **Passing**: 197 tests (100%)
+- **Passing**: 202 tests (100%)
 
 ### Planned Features
 - Linux/macOS support
