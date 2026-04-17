@@ -68,7 +68,11 @@ namespace FolderTools
             }
 
             // Route to appropriate processing mode
-            if (parser.IsBulkMode)
+            if (parser.IsRenameMode)
+            {
+                return ProcessRenameMode(parser, rootDirectory, filter);
+            }
+            else if (parser.IsBulkMode)
             {
                 return ProcessBulkMode(parser, rootDirectory, options, filter);
             }
@@ -231,6 +235,123 @@ namespace FolderTools
 
             // Return exit code based on whether there were any failed pairs
             return bulkResult.FailedPairs > 0 ? 1 : 0;
+        }
+
+        /// <summary>
+        /// Processes file rename operations (rename mode)
+        /// </summary>
+        private static int ProcessRenameMode(CommandLineParser parser, string rootDirectory, FileFilter filter)
+        {
+            var renameOptions = parser.RenameOptions;
+            var formatter = new ResultFormatter();
+
+            // Validate: at least one sub-mode must be active
+            if (!renameOptions.IsFindReplaceMode && !renameOptions.IsCsvMode && !renameOptions.IsPrefixSuffixMode)
+            {
+                formatter.PrintError("Rename mode requires a search/replace pattern, --rename-file, or --prefix/--suffix");
+                return 1;
+            }
+
+            // If CSV mode, route to CSV processor
+            if (renameOptions.IsCsvMode)
+            {
+                return ProcessRenameCsvMode(parser, rootDirectory, renameOptions, filter);
+            }
+
+            // Validate find/replace mode has both pattern and replacement
+            if (renameOptions.IsFindReplaceMode && string.IsNullOrEmpty(renameOptions.Replacement) &&
+                !renameOptions.IsPrefixSuffixMode)
+            {
+                // Replacement can be empty (removing text from filename), but must be explicitly provided
+                // Allow continuing with empty replacement
+            }
+
+            // For find/replace and prefix/suffix modes
+            var fileRenamer = new FileRenamer();
+
+            // Print header
+            if (!renameOptions.Quiet)
+            {
+                formatter.PrintRenameHeader(rootDirectory, renameOptions);
+            }
+
+            RenameResult result;
+
+            try
+            {
+                result = fileRenamer.RenameFiles(rootDirectory, renameOptions, filter);
+            }
+            catch (Exception ex)
+            {
+                formatter.PrintError($"Unexpected error during rename: {ex.Message}");
+                return 1;
+            }
+
+            // Print detailed results
+            if (!renameOptions.Quiet)
+            {
+                formatter.PrintRenameResults(result, rootDirectory, renameOptions.Verbose);
+                formatter.PrintRenameSummary(result, renameOptions.IsDryRun);
+            }
+
+            return result.FilesWithErrors > 0 ? 1 : 0;
+        }
+
+        /// <summary>
+        /// Processes CSV-based rename operations
+        /// </summary>
+        private static int ProcessRenameCsvMode(CommandLineParser parser, string rootDirectory, RenameOptions renameOptions, FileFilter filter)
+        {
+            var formatter = new ResultFormatter();
+
+            // Parse the CSV file
+            var csvParser = new CsvRenameParser();
+            List<RenameMapping> mappings;
+
+            try
+            {
+                mappings = csvParser.ParseFile(renameOptions.RenameFilePath);
+
+                if (mappings.Count == 0)
+                {
+                    formatter.PrintError("No valid rename mappings found in CSV file");
+                    return 1;
+                }
+            }
+            catch (Exception ex)
+            {
+                formatter.PrintError($"Error reading CSV file: {ex.Message}");
+                return 1;
+            }
+
+            // Print header
+            if (!renameOptions.Quiet)
+            {
+                formatter.PrintRenameHeader(rootDirectory, renameOptions);
+            }
+
+            // Create the bulk rename processor and process all mappings
+            var bulkProcessor = new BulkRenameProcessor();
+            RenameResult result;
+
+            try
+            {
+                result = bulkProcessor.ProcessBulkRename(mappings, rootDirectory, renameOptions, filter);
+            }
+            catch (Exception ex)
+            {
+                formatter.PrintError($"Unexpected error during bulk rename: {ex.Message}");
+                return 1;
+            }
+
+            // Print results
+            if (!renameOptions.Quiet)
+            {
+                formatter.PrintRenameResults(result, rootDirectory, renameOptions.Verbose);
+                formatter.PrintRenameSummary(result, renameOptions.IsDryRun);
+            }
+
+            return result.FilesWithErrors > 0 ? 1 : 0;
         }
 
         /// <summary>

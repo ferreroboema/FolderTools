@@ -519,9 +519,9 @@ Test fixtures are located in `FolderTools.Tests/TestData/`:
 
 ## Project Status
 
-### Version: 1.0.0
+### Version: 1.1.0
 
-**Current Release**: Stable | **Last Updated**: February 2025
+**Current Release**: Stable | **Last Updated**: April 2026
 
 ### Implementation Progress
 

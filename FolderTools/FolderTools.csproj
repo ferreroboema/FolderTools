@@ -13,6 +13,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
     <PlatformTarget>x86</PlatformTarget>
+    <Version>1.1.0</Version>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -50,7 +51,14 @@
     <Compile Include="Models\SearchReplacePair.cs" />
     <Compile Include="Models\BulkReplacementResult.cs" />
     <Compile Include="Models\CollisionInfo.cs" />
+    <Compile Include="Models\RenameOptions.cs" />
+    <Compile Include="Models\RenameResult.cs" />
+    <Compile Include="Models\RenameMapping.cs" />
+    <Compile Include="Models\RenameCollisionInfo.cs" />
     <Compile Include="Services\IFileProcessor.cs" />
+    <Compile Include="Services\IFileRenamer.cs" />
+    <Compile Include="Services\FileRenamer.cs" />
+    <Compile Include="Services\BulkRenameProcessor.cs" />
     <Compile Include="Services\IFileHelper.cs" />
     <Compile Include="Services\FileProcessor.cs" />
     <Compile Include="Services\ITextReplacer.cs" />
@@ -62,6 +70,8 @@
     <Compile Include="Utilities\EncodingHelper.cs" />
     <Compile Include="Utilities\CsvSearchReplaceParser.cs" />
     <Compile Include="Utilities\BulkCollisionValidator.cs" />
+    <Compile Include="Utilities\RenameCollisionValidator.cs" />
+    <Compile Include="Utilities\CsvRenameParser.cs" />
     <Compile Include="Outputs\ResultFormatter.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

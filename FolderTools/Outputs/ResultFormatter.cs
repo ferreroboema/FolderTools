@@ -338,5 +338,127 @@ namespace FolderTools.Outputs
                 Console.WriteLine(message);
             }
         }
+
+        /// <summary>
+        /// Prints a header for rename mode
+        /// </summary>
+        public void PrintRenameHeader(string rootDirectory, RenameOptions options)
+        {
+            Console.WriteLine();
+            Console.WriteLine("=== FolderTools - File Rename ===");
+            Console.WriteLine($"Directory: {rootDirectory}");
+
+            if (options.IsFindReplaceMode)
+            {
+                Console.WriteLine($"Filename pattern: {EscapeForDisplay(options.Pattern)}");
+                Console.WriteLine($"Replacement: {EscapeForDisplay(options.Replacement ?? "(empty)")}");
+                Console.WriteLine($"Regex: {options.IsRegex}");
+                Console.WriteLine($"Case sensitive: {options.CaseSensitive}");
+            }
+            else if (options.IsCsvMode)
+            {
+                Console.WriteLine($"Rename file: {options.RenameFilePath}");
+            }
+            else if (options.IsPrefixSuffixMode)
+            {
+                Console.WriteLine($"Prefix: {EscapeForDisplay(options.Prefix ?? "(none)")}");
+                Console.WriteLine($"Suffix: {EscapeForDisplay(options.Suffix ?? "(none)")}");
+                Console.WriteLine($"Start number: {options.StartNumber}");
+                Console.WriteLine($"Padding: {(options.Padding > 0 ? options.Padding.ToString() : "none")}");
+                Console.WriteLine($"Sort order: {options.SortOrder}");
+            }
+
+            Console.WriteLine($"Mode: {(options.IsDryRun ? "Dry-run (no changes will be made)" : "Live (files will be renamed)")}");
+            Console.WriteLine();
+        }
+
+        /// <summary>
+        /// Prints detailed results for rename mode
+        /// </summary>
+        public void PrintRenameResults(RenameResult result, string rootDirectory, bool verbose)
+        {
+            if (!verbose && result.FilesWithErrors == 0 && result.SkippedFiles.Count == 0)
+            {
+                return;
+            }
+
+            Console.WriteLine();
+
+            // Print successful renames (only in verbose mode)
+            if (verbose && result.FileResults.Count > 0)
+            {
+                Console.WriteLine("--- Detailed Results ---");
+                foreach (var fileResult in result.FileResults)
+                {
+                    if (fileResult.Success)
+                    {
+                        string relativeOriginal = GetRelativePath(rootDirectory, fileResult.OriginalPath);
+                        string newName = System.IO.Path.GetFileName(fileResult.NewPath);
+                        WriteSuccess($"  {relativeOriginal} -> {newName}");
+                    }
+                }
+            }
+
+            // Print errors
+            if (result.FilesWithErrors > 0)
+            {
+                Console.WriteLine();
+                Console.WriteLine("--- Errors ---");
+                foreach (var fileResult in result.FileResults)
+                {
+                    if (!fileResult.Success)
+                    {
+                        string relativePath = GetRelativePath(rootDirectory, fileResult.OriginalPath);
+                        WriteError($"  {relativePath}: {fileResult.ErrorMessage}");
+                    }
+                }
+            }
+
+            // Print skipped files (only in verbose mode)
+            if (verbose && result.SkippedFiles.Count > 0)
+            {
+                Console.WriteLine();
+                Console.WriteLine("--- Skipped Files ---");
+                foreach (var skipped in result.SkippedFiles)
+                {
+                    string relativePath = GetRelativePath(rootDirectory, skipped.FilePath);
+                    WriteWarning($"  {relativePath}: {skipped.Reason}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Prints a summary for rename operations
+        /// </summary>
+        public void PrintRenameSummary(RenameResult result, bool isDryRun)
+        {
+            string operation = isDryRun ? "Rename dry-run completed" : "Rename operation completed";
+
+            Console.WriteLine();
+            Console.WriteLine("=== " + operation + " ===");
+            Console.WriteLine($"Files renamed: {result.TotalRenamed}");
+            Console.WriteLine($"Files with errors: {result.FilesWithErrors}");
+            Console.WriteLine($"Files skipped: {result.SkippedFiles.Count}");
+        }
+
+        /// <summary>
+        /// Prints collision warnings for rename operations
+        /// </summary>
+        public void PrintRenameCollisionWarnings(RenameCollisionResult collisionResult)
+        {
+            if (collisionResult == null || !collisionResult.HasCollisions)
+                return;
+
+            Console.WriteLine();
+            Console.WriteLine("=== RENAME COLLISIONS DETECTED ===");
+            Console.WriteLine();
+
+            foreach (var collision in collisionResult.Collisions)
+            {
+                WriteWarning($"  {collision.GetDescription()}");
+            }
+
+            Console.WriteLine();
+        }
     }
 }

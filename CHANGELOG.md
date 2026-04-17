@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-04-17
+
+### Added
+- **Bulk File Rename Mode**: Rename files in bulk with three sub-modes
+  - Find/Replace in filenames: Search and replace text within filenames (literal or regex)
+  - CSV mapping: Rename files from a CSV file with `old_name,new_name` pairs
+  - Prefix/Suffix + Numbering: Add prefix/suffix with sequential numbering and zero-padding
+- **Rename Collision Detection**: Automatic detection of filename conflicts
+  - Detects multiple files mapping to the same target name
+  - Detects target files that already exist on disk
+- **Case-Only Rename Support**: Handles case-only renames on Windows via two-step temp file
+
+#### New CLI Options
+- `--rename`: Enable rename mode (operates on filenames instead of file contents)
+- `--rename-file <csv>`: CSV file with old_name,new_name pairs
+- `--prefix <text>`: Add prefix before filename
+- `--suffix <text>`: Add suffix before file extension
+- `--start-number <n>`: Starting number for numbering (default: 1)
+- `--padding <n>`: Zero-pad width for number (e.g., 3 = "001")
+- `--sort <name|date|size>`: Sort order for numbering (default: name)
+
+#### New Models
+- **RenameOptions**: Rename configuration with sub-mode detection and numbering options
+- **RenameResult/FileRenameResult**: Rename operation result tracking
+- **RenameMapping**: CSV rename pair (old_name -> new_name)
+- **RenameCollision/RenameCollisionResult**: Rename collision detection results
+
+#### New Services
+- **IFileRenamer/FileRenamer**: Core rename service with three-phase approach (collect, build targets, execute)
+- **BulkRenameProcessor**: CSV-based bulk rename orchestrator
+
+#### New Utilities
+- **RenameCollisionValidator**: Detects duplicate targets and existing-file conflicts
+- **CsvRenameParser**: Parses CSV files with old_name,new_name pairs
+
+#### Enhanced Output
+- `PrintRenameHeader()`: Rename mode header with sub-mode details
+- `PrintRenameResults()`: Detailed rename results with original -> new mapping
+- `PrintRenameSummary()`: Rename operation summary statistics
+- `PrintRenameCollisionWarnings()`: Collision warning display
+
+### Changed
+- **Help System**: Updated to show standard, bulk, and rename mode usage with examples
+- **Program.cs**: Added rename mode routing with `ProcessRenameMode()` and `ProcessRenameCsvMode()` methods
+- **Test Coverage**: Maintained at 202 tests (100% pass rate)
+
+### Previous Unreleased Features (now included in 1.1.0)
+
 ### Added
 - **Collision Detection for Bulk Mode**: Automatic detection of potential collisions in bulk mode
   - Detects when replacement values from one pair become search patterns in subsequent pairs
@@ -303,9 +351,9 @@ FolderTools/
 | Version | Target Date | Status |
 |---------|-------------|--------|
 | 1.0.0 | February 2025 | ✅ Released |
-| 1.1.0 | Q2 2025 | � Planned |
-| 1.2.0 | Q3 2025 | � Planned |
-| 2.0.0 | Q4 2025 | � Planned |
+| 1.1.0 | April 2026 | ✅ Released |
+| 1.2.0 | Q3 2026 | Planned |
+| 2.0.0 | Q4 2026 | Planned |
 
 ---
 

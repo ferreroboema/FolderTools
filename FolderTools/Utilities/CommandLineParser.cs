@@ -22,12 +22,24 @@ namespace FolderTools.Utilities
         /// </summary>
         public string BulkFilePath { get; private set; }
 
+        /// <summary>
+        /// Indicates whether rename mode is enabled
+        /// </summary>
+        public bool IsRenameMode { get; private set; }
+
+        /// <summary>
+        /// Rename-specific options (populated when --rename is used)
+        /// </summary>
+        public RenameOptions RenameOptions { get; private set; }
+
         public CommandLineParser(string[] args)
         {
             _args = new List<string>(args);
             _currentIndex = 0;
             IsBulkMode = false;
             BulkFilePath = null;
+            IsRenameMode = false;
+            RenameOptions = null;
         }
 
         /// <summary>
@@ -60,6 +72,15 @@ namespace FolderTools.Utilities
                     {
                         error = "VERSION";
                         return false;
+                    }
+                }
+
+                // Check for rename mode flag
+                for (int i = 0; i < _args.Count; i++)
+                {
+                    if (_args[i].ToLower() == "--rename")
+                    {
+                        return ParseRenameModeArguments(i, out options, out filter, out error);
                     }
                 }
 
@@ -277,6 +298,133 @@ namespace FolderTools.Utilities
         }
 
         /// <summary>
+        /// Parses command-line arguments for rename mode
+        /// </summary>
+        private bool ParseRenameModeArguments(int renameFlagIndex, out SearchOptions options, out FileFilter filter, out string error)
+        {
+            options = new SearchOptions();
+            filter = new FileFilter();
+            error = null;
+            IsRenameMode = true;
+            RenameOptions = new RenameOptions();
+
+            try
+            {
+                // Find the directory and detect sub-mode
+                string directory = null;
+
+                // Collect all non-flag, non-value args to find directory and patterns
+                var positionalArgs = new List<string>();
+                var skipIndices = new HashSet<int>();
+                skipIndices.Add(renameFlagIndex);
+
+                // Pre-scan to find rename-file, prefix, suffix and their values
+                for (int i = 0; i < _args.Count; i++)
+                {
+                    string argLower = _args[i].ToLower();
+                    if (argLower == "--rename-file" || argLower == "--prefix" ||
+                        argLower == "--suffix" || argLower == "--start-number" ||
+                        argLower == "--padding" || argLower == "--sort")
+                    {
+                        skipIndices.Add(i);
+                        if (i + 1 < _args.Count) skipIndices.Add(i + 1);
+                    }
+                }
+
+                for (int i = 0; i < _args.Count; i++)
+                {
+                    if (skipIndices.Contains(i)) continue;
+                    string arg = _args[i];
+                    if (arg.ToLower() == "--rename") continue;
+                    if (arg.StartsWith("-")) continue;
+
+                    // Try as directory
+                    if (System.IO.Directory.Exists(arg))
+                    {
+                        directory = arg;
+                    }
+                    else
+                    {
+                        positionalArgs.Add(arg);
+                    }
+                }
+
+                // If we have 2+ positional args, treat first two as search/replace pattern
+                if (positionalArgs.Count >= 2)
+                {
+                    RenameOptions.Pattern = positionalArgs[0];
+                    RenameOptions.Replacement = positionalArgs[1];
+                }
+                else if (positionalArgs.Count == 1)
+                {
+                    RenameOptions.Pattern = positionalArgs[0];
+                }
+
+                if (string.IsNullOrEmpty(directory))
+                {
+                    directory = ".";
+                }
+
+                _rootDirectory = directory;
+
+                // Parse all optional arguments
+                _currentIndex = 0;
+                while (_currentIndex < _args.Count)
+                {
+                    string arg = _args[_currentIndex];
+
+                    // Skip --rename flag itself
+                    if (arg.ToLower() == "--rename")
+                    {
+                        _currentIndex++;
+                        continue;
+                    }
+
+                    // Skip directory argument
+                    if (arg == directory)
+                    {
+                        _currentIndex++;
+                        continue;
+                    }
+
+                    // Skip positional pattern args (if they were consumed as search/replace)
+                    if (positionalArgs.Contains(arg) && !arg.StartsWith("-"))
+                    {
+                        _currentIndex++;
+                        continue;
+                    }
+
+                    int beforeIndex = _currentIndex;
+                    if (!ParseOptionalArgument(arg, options, filter, out error))
+                    {
+                        return false;
+                    }
+
+                    if (_currentIndex == beforeIndex)
+                    {
+                        _currentIndex++;
+                    }
+                }
+
+                // Copy shared options from SearchOptions to RenameOptions
+                RenameOptions.IsRegex = options.IsRegex;
+                RenameOptions.CaseSensitive = options.CaseSensitive;
+                RenameOptions.IsDryRun = options.IsDryRun;
+                RenameOptions.Verbose = options.Verbose;
+                RenameOptions.Quiet = options.Quiet;
+                RenameOptions.IncludeHidden = options.IncludeHidden;
+                RenameOptions.MaxDepth = options.MaxDepth;
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = $"Error parsing rename mode arguments: {ex.Message}";
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Parses a single optional argument
         /// </summary>
         private bool ParseOptionalArgument(string arg, SearchOptions options, FileFilter filter, out string error)
@@ -387,6 +535,97 @@ namespace FolderTools.Utilities
                     _currentIndex++;
                     break;
 
+                // Rename mode flags (only valid when --rename is active)
+                case "--rename-file":
+                    if (!IsRenameMode)
+                    {
+                        error = $"Unknown argument: {arg}";
+                        return false;
+                    }
+                    if (!HasNextArg())
+                    {
+                        error = $"Missing value for {arg}";
+                        return false;
+                    }
+                    RenameOptions.RenameFilePath = GetNextArg();
+                    _currentIndex++;
+                    break;
+
+                case "--prefix":
+                    if (!IsRenameMode)
+                    {
+                        error = $"Unknown argument: {arg}";
+                        return false;
+                    }
+                    if (!HasNextArg())
+                    {
+                        error = $"Missing value for {arg}";
+                        return false;
+                    }
+                    RenameOptions.Prefix = GetNextArg();
+                    _currentIndex++;
+                    break;
+
+                case "--suffix":
+                    if (!IsRenameMode)
+                    {
+                        error = $"Unknown argument: {arg}";
+                        return false;
+                    }
+                    if (!HasNextArg())
+                    {
+                        error = $"Missing value for {arg}";
+                        return false;
+                    }
+                    RenameOptions.Suffix = GetNextArg();
+                    _currentIndex++;
+                    break;
+
+                case "--start-number":
+                    if (!IsRenameMode)
+                    {
+                        error = $"Unknown argument: {arg}";
+                        return false;
+                    }
+                    if (!HasNextArg() || !int.TryParse(GetNextArg(), out int startNum) || startNum < 0)
+                    {
+                        error = $"Invalid value for {arg}. Must be a non-negative integer.";
+                        return false;
+                    }
+                    RenameOptions.StartNumber = startNum;
+                    _currentIndex++;
+                    break;
+
+                case "--padding":
+                    if (!IsRenameMode)
+                    {
+                        error = $"Unknown argument: {arg}";
+                        return false;
+                    }
+                    if (!HasNextArg() || !int.TryParse(GetNextArg(), out int padding) || padding < 0)
+                    {
+                        error = $"Invalid value for {arg}. Must be a non-negative integer.";
+                        return false;
+                    }
+                    RenameOptions.Padding = padding;
+                    _currentIndex++;
+                    break;
+
+                case "--sort":
+                    if (!IsRenameMode)
+                    {
+                        error = $"Unknown argument: {arg}";
+                        return false;
+                    }
+                    if (!HasNextArg() || !ParseSortOrder(GetNextArg(), out RenameSortOrder sortOrder))
+                    {
+                        error = $"Invalid value for {arg}. Valid values: name, date, size";
+                        return false;
+                    }
+                    RenameOptions.SortOrder = sortOrder;
+                    _currentIndex++;
+                    break;
+
                 case "-V":
                 case "--version":
                     error = "VERSION";
@@ -472,6 +711,25 @@ namespace FolderTools.Utilities
             }
         }
 
+        private bool ParseSortOrder(string value, out RenameSortOrder sortOrder)
+        {
+            switch (value.ToLower())
+            {
+                case "name":
+                    sortOrder = RenameSortOrder.Name;
+                    return true;
+                case "date":
+                    sortOrder = RenameSortOrder.Date;
+                    return true;
+                case "size":
+                    sortOrder = RenameSortOrder.Size;
+                    return true;
+                default:
+                    sortOrder = RenameSortOrder.Name;
+                    return false;
+            }
+        }
+
         /// <summary>
         /// Displays help information for the command-line tool
         /// </summary>
@@ -482,6 +740,9 @@ namespace FolderTools.Utilities
             Console.WriteLine("Usage:");
             Console.WriteLine("  Standard mode: FolderTools.exe <search-pattern> <replace-pattern> [<directory>] [options]");
             Console.WriteLine("  Bulk mode:     FolderTools.exe --bulk-file <csv> [<directory>] [options]");
+            Console.WriteLine("  Rename mode:   FolderTools.exe --rename <search> <replace> [<directory>] [options]");
+            Console.WriteLine("                 FolderTools.exe --rename --rename-file <csv> [<directory>] [options]");
+            Console.WriteLine("                 FolderTools.exe --rename --prefix <text> [--suffix <text>] [<directory>] [options]");
             Console.WriteLine("                  (If directory is omitted, current directory is used after prompt)");
             Console.WriteLine();
             Console.WriteLine("Standard mode - Required arguments:");
@@ -519,6 +780,22 @@ namespace FolderTools.Utilities
             Console.WriteLine("Bulk mode examples:");
             Console.WriteLine("  FolderTools.exe --bulk-file replacements.csv \"C:\\MyFolder\" -e \".txt,.cs\" -d");
             Console.WriteLine("  FolderTools.exe -b pairs.csv \"C:\\Project\" -e \".cs,.js,.json\" -c -v");
+            Console.WriteLine();
+            Console.WriteLine("Rename mode - Rename files in a directory:");
+            Console.WriteLine("  --rename                         Enable rename mode (operates on filenames)");
+            Console.WriteLine("  --rename-file <csv>              CSV file with old_name,new_name pairs");
+            Console.WriteLine("  --prefix <text>                  Add prefix before filename (before extension)");
+            Console.WriteLine("  --suffix <text>                  Add suffix before the file extension");
+            Console.WriteLine("  --start-number <n>               Starting number for numbering (default: 1)");
+            Console.WriteLine("  --padding <n>                    Zero-pad width for number (e.g., 3 = \"001\")");
+            Console.WriteLine("  --sort <name|date|size>          Sort order for numbering (default: name)");
+            Console.WriteLine();
+            Console.WriteLine("Rename mode examples:");
+            Console.WriteLine("  FolderTools.exe --rename \"old\" \"new\" \"C:\\MyFiles\" -e \".txt\" -d");
+            Console.WriteLine("  FolderTools.exe --rename \"\\d+\" \"NUM\" \"C:\\Data\" -r -c -e \".log\"");
+            Console.WriteLine("  FolderTools.exe --rename --rename-file renames.csv \"C:\\MyFiles\" -d");
+            Console.WriteLine("  FolderTools.exe --rename --prefix \"photo_\" --padding 3 \"C:\\Photos\" -e \".jpg\"");
+            Console.WriteLine("  FolderTools.exe --rename --suffix \"_backup\" \"C:\\Data\" --sort date");
             Console.WriteLine();
             Console.WriteLine("CSV file format:");
             Console.WriteLine("  # Comment lines start with #");
